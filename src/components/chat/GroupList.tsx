@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Users, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MemberManagementDialog } from "@/components/admin/MemberManagementDialog";
 
 interface Group {
   id: string;
@@ -84,26 +85,35 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdmin, onCreateGro
       ) : (
         <div className="space-y-2">
           {groups.map((group) => (
-            <Card
-              key={group.id}
-              className={`p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-subtle)] ${
-                selectedGroupId === group.id
-                  ? "border-primary bg-secondary"
-                  : "hover:bg-muted"
-              }`}
-              onClick={() => onSelectGroup(group.id)}
-            >
-              <div className="flex items-start gap-3">
-                <div className="bg-primary/10 p-2 rounded-lg">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">{group.name}</h3>
-                  {group.description && (
-                    <p className="text-sm text-muted-foreground truncate">{group.description}</p>
-                  )}
+            <Card key={group.id} className="overflow-hidden">
+              <div
+                className={`p-4 cursor-pointer transition-all hover:shadow-[var(--shadow-subtle)] ${
+                  selectedGroupId === group.id
+                    ? "border-l-4 border-l-primary bg-secondary"
+                    : "hover:bg-muted"
+                }`}
+                onClick={() => onSelectGroup(group.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="bg-primary/10 p-2 rounded-lg">
+                    <Users className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">{group.name}</h3>
+                    {group.description && (
+                      <p className="text-sm text-muted-foreground truncate">{group.description}</p>
+                    )}
+                  </div>
                 </div>
               </div>
+              {isAdmin && selectedGroupId === group.id && (
+                <div className="px-4 pb-4 border-t pt-3 bg-muted/30">
+                  <MemberManagementDialog
+                    groupId={group.id}
+                    groupName={group.name}
+                  />
+                </div>
+              )}
             </Card>
           ))}
         </div>

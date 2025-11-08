@@ -3,9 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Image as ImageIcon, Video } from "lucide-react";
+import { Send } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useMediaQuota } from "@/hooks/useMediaQuota";
+import { MediaUpload } from "./MediaUpload";
 
 interface Message {
   id: string;
@@ -30,6 +32,12 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const quota = useMediaQuota(userId, groupId);
+
+  const refreshQuota = () => {
+    // Trigger a re-fetch by updating a dependency
+    window.location.reload();
+  };
 
   useEffect(() => {
     const getUser = async () => {
@@ -121,9 +129,14 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   if (!groupId) {
     return (
       <Card className="flex-1 flex items-center justify-center p-8">
-        <p className="text-muted-foreground text-center">
-          Select a group to start chatting
-        </p>
+        <div className="text-center space-y-3">
+          <p className="text-muted-foreground">
+            Select a group to start chatting
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Welcome to Sale4Me! Choose a group from the left to begin.
+          </p>
+        </div>
       </Card>
     );
   }
@@ -131,49 +144,70 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   return (
     <Card className="flex-1 flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const isOwn = message.user_id === userId;
-          return (
-            <div
-              key={message.id}
-              className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                  isOwn
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-foreground"
-                }`}
-              >
-                {!isOwn && (
-                  <p className="text-xs font-semibold mb-1 opacity-80">
-                    {message.profiles?.full_name || "User"}
-                  </p>
-                )}
-                <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {new Date(message.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
+        {messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+            <div className="space-y-2">
+              <p className="font-medium">No messages yet</p>
+              <p className="text-sm">Start the conversation by sending a message below!</p>
             </div>
-          );
-        })}
+          </div>
+        ) : (
+          messages.map((message) => {
+            const isOwn = message.user_id === userId;
+            return (
+              <div
+                key={message.id}
+                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                    isOwn
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-foreground"
+                  }`}
+                >
+                  {!isOwn && (
+                    <p className="text-xs font-semibold mb-1 opacity-80">
+                      {message.profiles?.full_name || "User"}
+                    </p>
+                  )}
+                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {new Date(message.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
         <div ref={messagesEndRef} />
       </div>
 
       <div className="border-t p-4 space-y-3">
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" className="gap-2" disabled>
-            <ImageIcon className="h-4 w-4" />
-            Image (0/2 today)
-          </Button>
-          <Button size="sm" variant="outline" className="gap-2" disabled>
-            <Video className="h-4 w-4" />
-            Video (0/1 today)
-          </Button>
+          {userId && (
+            <>
+              <MediaUpload
+                groupId={groupId}
+                userId={userId}
+                type="image"
+                disabled={quota.loading || quota.images.used >= quota.images.total}
+                remainingQuota={quota.images.total - quota.images.used}
+                onUploadComplete={refreshQuota}
+              />
+              <MediaUpload
+                groupId={groupId}
+                userId={userId}
+                type="video"
+                disabled={quota.loading || quota.videos.used >= quota.videos.total}
+                remainingQuota={quota.videos.total - quota.videos.used}
+                onUploadComplete={refreshQuota}
+              />
+            </>
+          )}
         </div>
         <div className="flex gap-2">
           <Textarea
