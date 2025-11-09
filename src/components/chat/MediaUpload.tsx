@@ -11,6 +11,7 @@ interface MediaUploadProps {
   disabled: boolean;
   remainingQuota: number;
   onUploadComplete: () => void;
+  messageId?: string;
 }
 
 export const MediaUpload = ({
@@ -20,6 +21,7 @@ export const MediaUpload = ({
   disabled,
   remainingQuota,
   onUploadComplete,
+  messageId,
 }: MediaUploadProps) => {
   const [uploading, setUploading] = useState(false);
 
@@ -101,6 +103,7 @@ export const MediaUpload = ({
         group_id: groupId,
         media_type: type,
         file_url: urlData.publicUrl,
+        message_id: messageId || null,
       });
 
       if (dbError) throw dbError;

@@ -8,6 +8,14 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
 import { MediaUpload } from "./MediaUpload";
+import { MediaLightbox } from "./MediaLightbox";
+import { MessageReactions } from "./MessageReactions";
+
+interface MediaUpload {
+  id: string;
+  file_url: string;
+  media_type: string;
+}
 
 interface Message {
   id: string;
@@ -17,6 +25,7 @@ interface Message {
   profiles: {
     full_name: string;
   };
+  media_uploads: MediaUpload[];
 }
 
 interface ChatWindowProps {
@@ -31,6 +40,7 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const quota = useMediaQuota(userId, groupId);
 
@@ -62,8 +72,19 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
           table: "messages",
           filter: `group_id=eq.${groupId}`,
         },
-        (payload) => {
-          const newMsg = payload.new as any;
+        () => {
+          fetchMessages();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "media_uploads",
+          filter: `group_id=eq.${groupId}`,
+        },
+        () => {
           fetchMessages();
         }
       )
@@ -87,6 +108,11 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
         *,
         profiles!messages_user_id_fkey (
           full_name
+        ),
+        media_uploads (
+          id,
+          file_url,
+          media_type
         )
       `)
       .eq("group_id", groupId)
@@ -172,12 +198,37 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
                     </p>
                   )}
                   <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                  
+                  {message.media_uploads && message.media_uploads.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {message.media_uploads.map((media) => (
+                        <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
+                          {media.media_type === "image" ? (
+                            <img
+                              src={media.file_url}
+                              alt="Uploaded"
+                              className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
+                            />
+                          ) : (
+                            <video
+                              src={media.file_url}
+                              className="rounded-lg max-w-[300px] max-h-[200px]"
+                              controls
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <p className="text-xs opacity-70 mt-1">
                     {new Date(message.created_at).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                   </p>
+                  
+                  <MessageReactions messageId={message.id} userId={userId} />
                 </div>
               </div>
             );
@@ -226,6 +277,15 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
           </Button>
         </div>
       </div>
+
+      {lightboxMedia && (
+        <MediaLightbox
+          mediaUrl={lightboxMedia.url}
+          mediaType={lightboxMedia.type}
+          isOpen={!!lightboxMedia}
+          onClose={() => setLightboxMedia(null)}
+        />
+      )}
     </Card>
   );
 };

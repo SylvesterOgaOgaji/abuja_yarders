@@ -76,6 +76,7 @@ export type Database = {
           group_id: string
           id: string
           media_type: string
+          message_id: string | null
           uploaded_at: string
           user_id: string
         }
@@ -84,6 +85,7 @@ export type Database = {
           group_id: string
           id?: string
           media_type: string
+          message_id?: string | null
           uploaded_at?: string
           user_id: string
         }
@@ -92,6 +94,7 @@ export type Database = {
           group_id?: string
           id?: string
           media_type?: string
+          message_id?: string | null
           uploaded_at?: string
           user_id?: string
         }
@@ -101,6 +104,45 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_uploads_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
