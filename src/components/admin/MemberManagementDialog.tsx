@@ -47,16 +47,24 @@ export const MemberManagementDialog = ({
         body: { email: email.trim() }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Function invoke error:', error);
+        toast.error(error.message || "Failed to search for user");
+        return;
+      }
 
-      if (data.error) {
+      if (data?.error) {
         toast.error(data.error);
         return;
       }
 
-      setFoundUser(data);
+      if (data) {
+        setFoundUser(data);
+        toast.success(`Found user: ${data.full_name}`);
+      }
     } catch (error: any) {
-      toast.error("User not found or error searching");
+      console.error('Search error:', error);
+      toast.error(error.message || "User not found or error searching");
     } finally {
       setSearching(false);
     }
