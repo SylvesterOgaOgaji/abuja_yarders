@@ -45,8 +45,7 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   const quota = useMediaQuota(userId, groupId);
 
   const refreshQuota = () => {
-    // Trigger a re-fetch by updating a dependency
-    window.location.reload();
+    quota.refetch();
   };
 
   useEffect(() => {
@@ -106,9 +105,6 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
       .from("messages")
       .select(`
         *,
-        profiles!messages_user_id_fkey (
-          full_name
-        ),
         media_uploads (
           id,
           file_url,
@@ -118,7 +114,25 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
       .eq("group_id", groupId)
       .order("created_at", { ascending: true });
 
-    setMessages(data as any || []);
+    // Fetch profiles separately
+    if (data && data.length > 0) {
+      const userIds = [...new Set(data.map(m => m.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      const messagesWithProfiles = data.map(msg => ({
+        ...msg,
+        profiles: profileMap.get(msg.user_id)
+      }));
+
+      setMessages(messagesWithProfiles as any);
+    } else {
+      setMessages([]);
+    }
   };
 
   const handleSend = async () => {

@@ -24,7 +24,35 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdmin, onCreateGro
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchGroups();
+    const setupGroupsSubscription = async () => {
+      await fetchGroups();
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Subscribe to group_members changes
+      const channel = supabase
+        .channel(`group_members:${user.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "group_members",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => {
+            fetchGroups();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupGroupsSubscription();
   }, []);
 
   const fetchGroups = async () => {
