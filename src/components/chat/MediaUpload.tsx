@@ -83,10 +83,23 @@ export const MediaUpload = ({
     setUploading(true);
 
     try {
+      // First create a message for this media
+      const { data: messageData, error: messageError } = await supabase
+        .from("messages")
+        .insert({
+          group_id: groupId,
+          user_id: userId,
+          content: `[${type === "image" ? "Image" : "Video"} uploaded]`,
+        })
+        .select()
+        .single();
+
+      if (messageError) throw messageError;
+
       // Upload to storage
       const fileExt = file.name.split(".").pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("media")
         .upload(fileName, file);
 
@@ -97,13 +110,13 @@ export const MediaUpload = ({
         .from("media")
         .getPublicUrl(fileName);
 
-      // Save to database
+      // Save to database with message_id
       const { error: dbError } = await supabase.from("media_uploads").insert({
         user_id: userId,
         group_id: groupId,
         media_type: type,
         file_url: urlData.publicUrl,
-        message_id: messageId || null,
+        message_id: messageData.id,
       });
 
       if (dbError) throw dbError;
@@ -111,6 +124,7 @@ export const MediaUpload = ({
       toast.success(`${type === "image" ? "Image" : "Video"} uploaded successfully`);
       onUploadComplete();
     } catch (error: any) {
+      console.error("Upload error:", error);
       toast.error(error.message || "Failed to upload file");
     } finally {
       setUploading(false);

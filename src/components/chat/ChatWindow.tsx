@@ -71,8 +71,36 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
           table: "messages",
           filter: `group_id=eq.${groupId}`,
         },
-        () => {
-          fetchMessages();
+        async (payload) => {
+          // Fetch the new message with its profile and media
+          const { data: newMessage } = await supabase
+            .from("messages")
+            .select(`
+              *,
+              media_uploads (
+                id,
+                file_url,
+                media_type
+              )
+            `)
+            .eq("id", payload.new.id)
+            .single();
+
+          if (newMessage) {
+            // Fetch profile for the new message
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("id, full_name")
+              .eq("id", newMessage.user_id)
+              .single();
+
+            const messageWithProfile = {
+              ...newMessage,
+              profiles: profile
+            };
+
+            setMessages(prev => [...prev, messageWithProfile as any]);
+          }
         }
       )
       .on(
@@ -83,8 +111,24 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
           table: "media_uploads",
           filter: `group_id=eq.${groupId}`,
         },
-        () => {
-          fetchMessages();
+        async (payload) => {
+          // Update the message that this media belongs to
+          const mediaUpload = payload.new as any;
+          if (mediaUpload.message_id) {
+            setMessages(prev => prev.map(msg => {
+              if (msg.id === mediaUpload.message_id) {
+                return {
+                  ...msg,
+                  media_uploads: [...(msg.media_uploads || []), {
+                    id: mediaUpload.id,
+                    file_url: mediaUpload.file_url,
+                    media_type: mediaUpload.media_type
+                  }]
+                };
+              }
+              return msg;
+            }));
+          }
         }
       )
       .subscribe();
