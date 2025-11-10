@@ -3,13 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Send, Gavel } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
 import { MediaUpload } from "./MediaUpload";
 import { MediaLightbox } from "./MediaLightbox";
 import { MessageReactions } from "./MessageReactions";
+import { CreateBidDialog } from "./CreateBidDialog";
+import { BiddingPanel } from "./BiddingPanel";
 
 interface MediaUpload {
   id: string;
@@ -41,6 +44,7 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
+  const [showCreateBid, setShowCreateBid] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const quota = useMediaQuota(userId, groupId);
 
@@ -227,7 +231,17 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
 
   return (
     <Card className="flex-1 flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+        <TabsList className="mx-4 mt-4">
+          <TabsTrigger value="chat">Chat</TabsTrigger>
+          <TabsTrigger value="bidding" className="gap-2">
+            <Gavel className="h-4 w-4" />
+            Bidding
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center text-muted-foreground">
             <div className="space-y-2">
@@ -292,49 +306,73 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
             );
           })
         )}
-        <div ref={messagesEndRef} />
-      </div>
+            <div ref={messagesEndRef} />
+          </div>
 
-      <div className="border-t p-4 space-y-3">
-        <div className="flex gap-2">
-          {userId && (
-            <>
-              <MediaUpload
-                groupId={groupId}
-                userId={userId}
-                type="image"
-                disabled={quota.loading || quota.images.used >= quota.images.total}
-                remainingQuota={quota.images.total - quota.images.used}
-                onUploadComplete={refreshQuota}
+          <div className="border-t p-4 space-y-3">
+            <div className="flex gap-2">
+              {userId && (
+                <>
+                  <MediaUpload
+                    groupId={groupId}
+                    userId={userId}
+                    type="image"
+                    disabled={quota.loading || quota.images.used >= quota.images.total}
+                    remainingQuota={quota.images.total - quota.images.used}
+                    onUploadComplete={refreshQuota}
+                  />
+                  <MediaUpload
+                    groupId={groupId}
+                    userId={userId}
+                    type="video"
+                    disabled={quota.loading || quota.videos.used >= quota.videos.total}
+                    remainingQuota={quota.videos.total - quota.videos.used}
+                    onUploadComplete={refreshQuota}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => setShowCreateBid(true)}
+                  >
+                    <Gavel className="h-4 w-4" />
+                    Create Bid
+                  </Button>
+                </>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Type your message..."
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="min-h-[60px] resize-none"
               />
-              <MediaUpload
-                groupId={groupId}
-                userId={userId}
-                type="video"
-                disabled={quota.loading || quota.videos.used >= quota.videos.total}
-                remainingQuota={quota.videos.total - quota.videos.used}
-                onUploadComplete={refreshQuota}
-              />
-            </>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Textarea
-            placeholder="Type your message..."
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="min-h-[60px] resize-none"
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!newMessage.trim()}
-            className="self-end"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+              <Button
+                onClick={handleSend}
+                disabled={!newMessage.trim()}
+                className="self-end"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="bidding" className="flex-1 overflow-y-auto p-4 m-0">
+          {userId && <BiddingPanel groupId={groupId} userId={userId} />}
+        </TabsContent>
+      </Tabs>
+
+      {userId && (
+        <CreateBidDialog
+          groupId={groupId}
+          userId={userId}
+          isOpen={showCreateBid}
+          onClose={() => setShowCreateBid(false)}
+        />
+      )}
 
       {lightboxMedia && (
         <MediaLightbox

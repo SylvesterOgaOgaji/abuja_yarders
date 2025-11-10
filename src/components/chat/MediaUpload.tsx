@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Video, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { VideoTrimmer } from "./VideoTrimmer";
 
 interface MediaUploadProps {
   groupId: string;
@@ -24,6 +25,8 @@ export const MediaUpload = ({
   messageId,
 }: MediaUploadProps) => {
   const [uploading, setUploading] = useState(false);
+  const [videoToTrim, setVideoToTrim] = useState<File | null>(null);
+  const [showTrimmer, setShowTrimmer] = useState(false);
 
   const validateVideo = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -50,6 +53,58 @@ export const MediaUpload = ({
     });
   };
 
+  const uploadFile = async (file: File) => {
+    setUploading(true);
+
+    try {
+      // Upload to storage first
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from("media")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("media")
+        .getPublicUrl(fileName);
+
+      // Create message and media_uploads in quick succession
+      const { data: messageData, error: messageError } = await supabase
+        .from("messages")
+        .insert({
+          group_id: groupId,
+          user_id: userId,
+          content: `[${type === "image" ? "Image" : "Video"} uploaded]`,
+        })
+        .select()
+        .single();
+
+      if (messageError) throw messageError;
+
+      // Immediately insert media_uploads
+      const { error: dbError } = await supabase.from("media_uploads").insert({
+        user_id: userId,
+        group_id: groupId,
+        media_type: type,
+        file_url: urlData.publicUrl,
+        message_id: messageData.id,
+      });
+
+      if (dbError) throw dbError;
+
+      toast.success(`${type === "image" ? "Image" : "Video"} uploaded successfully`);
+      onUploadComplete();
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload file");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -74,92 +129,84 @@ export const MediaUpload = ({
       return;
     }
 
-    // Validate video duration
+    // Validate video duration and offer trimming
     if (type === "video") {
-      const isValid = await validateVideo(file);
-      if (!isValid) return;
+      const video = document.createElement("video");
+      video.preload = "metadata";
+
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        const duration = video.duration;
+        
+        if (duration > 60) {
+          // Show trimmer dialog
+          setVideoToTrim(file);
+          setShowTrimmer(true);
+        } else {
+          // Upload directly
+          uploadFile(file);
+        }
+      };
+
+      video.onerror = () => {
+        toast.error("Invalid video file");
+      };
+
+      video.src = URL.createObjectURL(file);
+    } else {
+      // Upload image directly
+      uploadFile(file);
     }
 
-    setUploading(true);
+    e.target.value = "";
+  };
 
-    try {
-      // First create a message for this media
-      const { data: messageData, error: messageError } = await supabase
-        .from("messages")
-        .insert({
-          group_id: groupId,
-          user_id: userId,
-          content: `[${type === "image" ? "Image" : "Video"} uploaded]`,
-        })
-        .select()
-        .single();
-
-      if (messageError) throw messageError;
-
-      // Upload to storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("media")
-        .upload(fileName, file);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("media")
-        .getPublicUrl(fileName);
-
-      // Save to database with message_id
-      const { error: dbError } = await supabase.from("media_uploads").insert({
-        user_id: userId,
-        group_id: groupId,
-        media_type: type,
-        file_url: urlData.publicUrl,
-        message_id: messageData.id,
-      });
-
-      if (dbError) throw dbError;
-
-      toast.success(`${type === "image" ? "Image" : "Video"} uploaded successfully`);
-      onUploadComplete();
-    } catch (error: any) {
-      console.error("Upload error:", error);
-      toast.error(error.message || "Failed to upload file");
-    } finally {
-      setUploading(false);
-      e.target.value = "";
-    }
+  const handleTrimComplete = (trimmedFile: File) => {
+    uploadFile(trimmedFile);
   };
 
   return (
-    <div className="relative">
-      <input
-        type="file"
-        accept={type === "image" ? "image/*" : "video/*"}
-        onChange={handleFileSelect}
-        disabled={disabled || uploading}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-        id={`upload-${type}`}
-      />
-      <Button
-        size="sm"
-        variant="outline"
-        className="gap-2"
-        disabled={disabled || uploading}
-        asChild
-      >
-        <label htmlFor={`upload-${type}`} className="cursor-pointer">
-          {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : type === "image" ? (
-            <ImageIcon className="h-4 w-4" />
-          ) : (
-            <Video className="h-4 w-4" />
-          )}
-          {type === "image" ? "Image" : "Video"} ({remainingQuota}/{type === "image" ? "2" : "1"} left)
-        </label>
-      </Button>
-    </div>
+    <>
+      <div className="relative">
+        <input
+          type="file"
+          accept={type === "image" ? "image/*" : "video/*"}
+          onChange={handleFileSelect}
+          disabled={disabled || uploading}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+          id={`upload-${type}`}
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-2"
+          disabled={disabled || uploading}
+          asChild
+        >
+          <label htmlFor={`upload-${type}`} className="cursor-pointer">
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : type === "image" ? (
+              <ImageIcon className="h-4 w-4" />
+            ) : (
+              <Video className="h-4 w-4" />
+            )}
+            {type === "image" ? "Image" : "Video"} ({remainingQuota}/{type === "image" ? "2" : "1"} left)
+          </label>
+        </Button>
+      </div>
+
+      {videoToTrim && (
+        <VideoTrimmer
+          file={videoToTrim}
+          isOpen={showTrimmer}
+          onClose={() => {
+            setShowTrimmer(false);
+            setVideoToTrim(null);
+          }}
+          onTrimComplete={handleTrimComplete}
+        />
+      )}
+    </>
   );
 };

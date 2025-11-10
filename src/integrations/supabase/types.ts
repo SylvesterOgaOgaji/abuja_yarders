@@ -14,6 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      bid_offers: {
+        Row: {
+          bid_id: string
+          created_at: string
+          id: string
+          offer_amount: number
+          user_id: string
+        }
+        Insert: {
+          bid_id: string
+          created_at?: string
+          id?: string
+          offer_amount: number
+          user_id: string
+        }
+        Update: {
+          bid_id?: string
+          created_at?: string
+          id?: string
+          offer_amount?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_offers_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bids: {
+        Row: {
+          created_at: string
+          current_price: number
+          ends_at: string
+          group_id: string
+          id: string
+          item_description: string | null
+          item_image_url: string | null
+          item_name: string
+          starting_price: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_price?: number
+          ends_at: string
+          group_id: string
+          id?: string
+          item_description?: string | null
+          item_image_url?: string | null
+          item_name: string
+          starting_price?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_price?: number
+          ends_at?: string
+          group_id?: string
+          id?: string
+          item_description?: string | null
+          item_image_url?: string | null
+          item_name?: string
+          starting_price?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           group_id: string
