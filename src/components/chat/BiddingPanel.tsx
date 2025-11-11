@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Gavel, Timer, TrendingUp, Trophy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { BidWinnerNotification } from "./BidWinnerNotification";
+import { formatCurrency } from "@/utils/currency";
 
 interface Bid {
   id: string;
@@ -43,6 +44,23 @@ interface BiddingPanelProps {
 export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
   const [bids, setBids] = useState<Bid[]>([]);
   const [offerAmounts, setOfferAmounts] = useState<Record<string, string>>({});
+  const [currency, setCurrency] = useState<"USD" | "NGN">("USD");
+
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("currency")
+        .eq("id", userId)
+        .single();
+      
+      if (data?.currency) {
+        setCurrency(data.currency as "USD" | "NGN");
+      }
+    };
+    
+    fetchCurrency();
+  }, [userId]);
 
   useEffect(() => {
     fetchBids();
@@ -123,7 +141,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
     const offerAmount = parseFloat(offerAmounts[bidId] || "0");
     
     if (offerAmount <= currentPrice) {
-      toast.error(`Offer must be higher than current price ($${currentPrice.toFixed(2)})`);
+      toast.error(`Offer must be higher than current price (${formatCurrency(currentPrice, currency)})`);
       return;
     }
 
@@ -212,7 +230,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
                 <div>
                   <p className="text-xs text-muted-foreground">Current Bid</p>
                   <p className="text-2xl font-bold text-primary">
-                    ${bid.current_price.toFixed(2)}
+                    {formatCurrency(bid.current_price, currency)}
                   </p>
                 </div>
                 {bid.bid_offers.length > 0 && (
@@ -262,7 +280,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
                   <Input
                     type="number"
                     step="0.01"
-                    placeholder={`Min: $${(bid.current_price + 0.01).toFixed(2)}`}
+                    placeholder={`Min: ${formatCurrency(bid.current_price + 0.01, currency)}`}
                     value={offerAmounts[bid.id] || ""}
                     onChange={(e) =>
                       setOfferAmounts(prev => ({ ...prev, [bid.id]: e.target.value }))
