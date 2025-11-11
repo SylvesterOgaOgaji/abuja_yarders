@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Gavel, Timer, TrendingUp } from "lucide-react";
+import { Gavel, Timer, TrendingUp, Trophy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { BidWinnerNotification } from "./BidWinnerNotification";
 
 interface Bid {
   id: string;
@@ -17,6 +18,10 @@ interface Bid {
   status: string;
   ends_at: string;
   user_id: string;
+  winner_id: string | null;
+  payment_deadline: string | null;
+  verification_status: string;
+  verification_url: string | null;
   profiles: {
     full_name: string;
   };
@@ -174,6 +179,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
 
   return (
     <div className="space-y-4">
+      <BidWinnerNotification userId={userId} />
       {bids.map((bid) => (
         <Card key={bid.id} className="p-4">
           <div className="flex gap-4">
@@ -222,7 +228,36 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
                 )}
               </div>
 
-              {bid.user_id !== userId && (
+              {bid.winner_id && (
+                <div className="p-3 bg-yellow-500/10 border border-yellow-500/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Trophy className="h-4 w-4 text-yellow-500" />
+                    <p className="text-sm font-semibold">
+                      {bid.winner_id === userId ? "You won this bid!" : "Bid closed"}
+                    </p>
+                  </div>
+                  {bid.winner_id === userId && (
+                    <>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Payment due: {new Date(bid.payment_deadline!).toLocaleDateString()}
+                      </p>
+                      {bid.verification_url && (
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={() => window.open(bid.verification_url!, "_blank")}
+                          className="gap-2"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Verify Identity
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {bid.user_id !== userId && !bid.winner_id && (
                 <div className="flex gap-2">
                   <Input
                     type="number"

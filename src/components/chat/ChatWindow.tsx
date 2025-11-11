@@ -64,6 +64,9 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
     if (!groupId) return;
 
     fetchMessages();
+    
+    // Trigger bid closing check when opening chat
+    supabase.functions.invoke('close-expired-bids').catch(console.error);
 
     const channel = supabase
       .channel(`messages:${groupId}`)

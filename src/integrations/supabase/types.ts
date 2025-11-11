@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      bid_notifications: {
+        Row: {
+          bid_id: string
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          user_id: string
+        }
+        Insert: {
+          bid_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          user_id: string
+        }
+        Update: {
+          bid_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bid_notifications_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bid_offers: {
         Row: {
           bid_id: string
@@ -56,10 +91,14 @@ export type Database = {
           item_description: string | null
           item_image_url: string | null
           item_name: string
+          payment_deadline: string | null
           starting_price: number
           status: string
           updated_at: string
           user_id: string
+          verification_status: string | null
+          verification_url: string | null
+          winner_id: string | null
         }
         Insert: {
           created_at?: string
@@ -70,10 +109,14 @@ export type Database = {
           item_description?: string | null
           item_image_url?: string | null
           item_name: string
+          payment_deadline?: string | null
           starting_price?: number
           status?: string
           updated_at?: string
           user_id: string
+          verification_status?: string | null
+          verification_url?: string | null
+          winner_id?: string | null
         }
         Update: {
           created_at?: string
@@ -84,10 +127,14 @@ export type Database = {
           item_description?: string | null
           item_image_url?: string | null
           item_name?: string
+          payment_deadline?: string | null
           starting_price?: number
           status?: string
           updated_at?: string
           user_id?: string
+          verification_status?: string | null
+          verification_url?: string | null
+          winner_id?: string | null
         }
         Relationships: []
       }

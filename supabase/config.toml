@@ -1,1 +1,7 @@
 project_id = "dxulwdurhldpcssnjivi"
+
+[functions.search-user-by-email]
+verify_jwt = false
+
+[functions.close-expired-bids]
+verify_jwt = false
