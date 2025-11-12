@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -9,7 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Upload } from "lucide-react";
 import { toast } from "sonner";
 
 interface UpgradeToSellerDialogProps {
@@ -24,34 +26,90 @@ export const UpgradeToSellerDialog = ({
   userId,
 }: UpgradeToSellerDialogProps) => {
   const [message, setMessage] = useState("");
+  const [vninShareCode, setVninShareCode] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setMessage("");
+      setVninShareCode("");
+      setPhoto(null);
+      setPhotoPreview(null);
+    }
+  }, [open]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.match(/^image\/(jpeg|jpg|png|webp)$/)) {
+        toast.error("Please upload a valid image (JPEG, PNG, or WebP)");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image must be less than 5MB");
+        return;
+      }
+      setPhoto(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!message.trim()) {
-      toast.error("Please provide a reason for your request");
+      toast.error("Please provide a message");
+      return;
+    }
+
+    if (!vninShareCode.trim()) {
+      toast.error("Please provide your VNIN share code from NINAuth");
+      return;
+    }
+
+    if (!photo) {
+      toast.error("Please upload your photo");
       return;
     }
 
     setSubmitting(true);
+
     try {
+      // Upload photo to storage
+      const fileExt = photo.name.split('.').pop();
+      const fileName = `${userId}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('seller-verification')
+        .upload(fileName, photo);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('seller-verification')
+        .getPublicUrl(fileName);
+
+      // Submit request
       const { error } = await supabase.from("seller_requests").insert({
         user_id: userId,
-        request_message: message,
+        request_message: message.trim(),
+        vnin_share_code: vninShareCode.trim(),
+        photo_url: publicUrl,
         status: "pending",
       });
 
       if (error) throw error;
 
       toast.success("Request submitted! An admin will review it soon.");
-      setMessage("");
       onOpenChange(false);
     } catch (error: any) {
       console.error("Submit error:", error);
-      if (error.code === "23505") {
-        toast.error("You already have a pending request");
-      } else {
-        toast.error(error.message || "Failed to submit request");
-      }
+      toast.error(error.message || "Failed to submit request");
     } finally {
       setSubmitting(false);
     }
@@ -59,7 +117,7 @@ export const UpgradeToSellerDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upgrade to Seller Account</DialogTitle>
           <DialogDescription>
@@ -68,26 +126,68 @@ export const UpgradeToSellerDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="message">Why do you want to become a seller?</Label>
-            <Textarea
-              id="message"
-              placeholder="Tell us about your business or what you plan to sell..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={4}
-            />
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="photo">Your Photo *</Label>
+            <div className="flex items-center gap-4">
+              {photoPreview ? (
+                <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-primary">
+                  <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
+                  <Upload className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1">
+                <Input
+                  id="photo"
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handlePhotoChange}
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload a clear photo of yourself (max 5MB)
+                </p>
+              </div>
+            </div>
           </div>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="w-full"
-          >
-            {submitting ? "Submitting..." : "Submit Request"}
-          </Button>
+          <div className="space-y-2">
+            <Label htmlFor="vnin">VNIN Share Code *</Label>
+            <Input
+              id="vnin"
+              value={vninShareCode}
+              onChange={(e) => setVninShareCode(e.target.value)}
+              placeholder="Enter your VNIN from NINAuth app"
+            />
+            <p className="text-xs text-muted-foreground">
+              Generated from NMIC app (NINAuth) under share code
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="message">Why do you want to become a seller? *</Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tell us about your business or what you plan to sell..."
+              rows={4}
+              className="resize-none"
+            />
+          </div>
         </div>
+
+        <Button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="w-full"
+          size="lg"
+        >
+          {submitting ? "Submitting..." : "Submit Request"}
+        </Button>
       </DialogContent>
     </Dialog>
   );

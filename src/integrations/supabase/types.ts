@@ -334,29 +334,35 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          photo_url: string | null
           request_message: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
           user_id: string
+          vnin_share_code: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          photo_url?: string | null
           request_message?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           user_id: string
+          vnin_share_code?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          photo_url?: string | null
           request_message?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
           user_id?: string
+          vnin_share_code?: string | null
         }
         Relationships: []
       }
