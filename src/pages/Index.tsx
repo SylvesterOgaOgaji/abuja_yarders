@@ -64,60 +64,82 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-primary">
-      <header className="border-b border-secondary/20 bg-secondary backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-primary-foreground">
-              Sale4Me
-            </h1>
-            <div className="flex gap-2">
-              {isAdmin && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
-                  <Shield className="h-3 w-3" />
-                  Admin
-                </div>
-              )}
-              {isSeller && (
-                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-accent text-accent-foreground text-xs font-medium">
-                  <Store className="h-3 w-3" />
-                  Seller
-                </div>
-              )}
+    <div className="min-h-screen bg-primary flex flex-col">
+      <header className="border-b border-secondary/20 bg-secondary backdrop-blur-sm sticky top-0 z-10 flex-shrink-0">
+        <div className="w-full px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
+            <div className="flex items-center gap-2 min-w-0 flex-shrink">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
+                Sale4Me
+              </h1>
+              <div className="hidden sm:flex gap-1 md:gap-2 flex-shrink-0">
+                {isAdmin && (
+                  <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-medium whitespace-nowrap">
+                    <Shield className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                    Admin
+                  </div>
+                )}
+                {isSeller && (
+                  <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-accent text-accent-foreground text-[10px] md:text-xs font-medium whitespace-nowrap">
+                    <Store className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                    Seller
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2">
-            {!isSeller && !isAdmin && (
-              <Button variant="outline" onClick={() => setUpgradeDialogOpen(true)} className="gap-2">
-                <Store className="h-4 w-4" />
-                Become Seller
+            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+              {!isSeller && !isAdmin && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setUpgradeDialogOpen(true)} 
+                  size="sm"
+                  className="gap-1 text-xs px-2 sm:px-3"
+                >
+                  <Store className="h-3 w-3" />
+                  <span className="hidden sm:inline">Become Seller</span>
+                  <span className="sm:hidden">Seller</span>
+                </Button>
+              )}
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSellerRequestsOpen(true)} 
+                  size="sm"
+                  className="gap-1 text-xs px-2 sm:px-3 hidden sm:flex"
+                >
+                  Seller Requests
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                onClick={handleLogout} 
+                size="sm"
+                className="gap-1 text-xs px-2 sm:px-3"
+              >
+                <LogOut className="h-3 w-3" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
-            )}
-            {isAdmin && (
-              <Button variant="outline" onClick={() => setSellerRequestsOpen(true)} className="gap-2">
-                Seller Requests
-              </Button>
-            )}
-            <Button variant="outline" onClick={handleLogout} className="gap-2">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
-        <div className="grid md:grid-cols-[350px_1fr] gap-6 h-[calc(100vh-140px)]">
-          <div className="overflow-y-auto">
-            <GroupList
-              key={refreshKey}
-              selectedGroupId={selectedGroupId}
-              onSelectGroup={setSelectedGroupId}
-              isAdmin={isAdmin}
-              onCreateGroup={() => setCreateDialogOpen(true)}
-            />
+      <main className="flex-1 w-full overflow-hidden">
+        <div className="h-full w-full p-2 sm:p-4 md:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-3 sm:gap-4 md:gap-6 h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)] md:h-[calc(100vh-140px)] max-w-full">
+            <div className="h-full overflow-y-auto overscroll-contain">
+              <GroupList
+                key={refreshKey}
+                selectedGroupId={selectedGroupId}
+                onSelectGroup={setSelectedGroupId}
+                isAdmin={isAdmin}
+                onCreateGroup={() => setCreateDialogOpen(true)}
+              />
+            </div>
+            <div className="h-full overflow-hidden">
+              <ChatWindow groupId={selectedGroupId} />
+            </div>
           </div>
-          <ChatWindow groupId={selectedGroupId} />
         </div>
       </main>
 

@@ -233,18 +233,18 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
   }
 
   return (
-    <Card className="flex-1 flex flex-col h-full">
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-4">
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="bidding" className="gap-2">
-            <Gavel className="h-4 w-4" />
+    <Card className="flex-1 flex flex-col h-full overflow-hidden">
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
+        <TabsList className="mx-2 sm:mx-4 mt-2 sm:mt-4 flex-shrink-0">
+          <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
+          <TabsTrigger value="bidding" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+            <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
             Bidding
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex">
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex overflow-hidden">
+          <div className="flex-1 overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-3 sm:space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center text-muted-foreground">
             <div className="space-y-2">
@@ -261,7 +261,7 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
                 className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 ${
+                  className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 sm:px-4 py-2 ${
                     isOwn
                       ? "bg-primary text-primary-foreground"
                       : "bg-secondary text-foreground"
@@ -312,8 +312,8 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="border-t p-4 space-y-3">
-            <div className="flex gap-2">
+          <div className="border-t p-2 sm:p-4 space-y-2 sm:space-y-3 flex-shrink-0">
+            <div className="flex gap-1 sm:gap-2 flex-wrap">
               {userId && (
                 <>
                   <MediaUpload
@@ -335,11 +335,12 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="gap-2"
+                    className="gap-1 sm:gap-2 text-xs"
                     onClick={() => setShowCreateBid(true)}
                   >
-                    <Gavel className="h-4 w-4" />
-                    Create Bid
+                    <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Create Bid</span>
+                    <span className="sm:hidden">Bid</span>
                   </Button>
                 </>
               )}
@@ -350,14 +351,11 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="min-h-[60px] resize-none"
+                className="min-h-[60px] sm:min-h-[80px] resize-none text-sm"
+                maxLength={5000}
               />
-              <Button
-                onClick={handleSend}
-                disabled={!newMessage.trim()}
-                className="self-end"
-              >
-                <Send className="h-4 w-4" />
+              <Button onClick={handleSend} disabled={!newMessage.trim()} size="icon" className="flex-shrink-0 h-[60px] w-[60px] sm:h-[80px] sm:w-[80px]">
+                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </div>
           </div>
