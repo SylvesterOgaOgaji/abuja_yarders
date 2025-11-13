@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Store } from "lucide-react";
+import { LogOut, Shield, Store, UserPlus } from "lucide-react";
 import { GroupList } from "@/components/chat/GroupList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { CreateGroupDialog } from "@/components/admin/CreateGroupDialog";
 import { SellerRequestsDialog } from "@/components/admin/SellerRequestsDialog";
+import { AddVerifiedSellerDialog } from "@/components/admin/AddVerifiedSellerDialog";
 import { UpgradeToSellerDialog } from "@/components/profile/UpgradeToSellerDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -18,6 +19,7 @@ const Index = () => {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [sellerRequestsOpen, setSellerRequestsOpen] = useState(false);
+  const [addSellerDialogOpen, setAddSellerDialogOpen] = useState(false);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
@@ -101,14 +103,25 @@ const Index = () => {
                 </Button>
               )}
               {isAdmin && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSellerRequestsOpen(true)} 
-                  size="sm"
-                  className="gap-1 text-xs px-2 sm:px-3 hidden sm:flex"
-                >
-                  Seller Requests
-                </Button>
+                <>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setSellerRequestsOpen(true)} 
+                    size="sm"
+                    className="gap-1 text-xs px-2 sm:px-3"
+                  >
+                    Seller Requests
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setAddSellerDialogOpen(true)} 
+                    size="sm"
+                    className="gap-1 text-xs px-2 sm:px-3 hidden sm:flex"
+                  >
+                    <UserPlus className="h-3 w-3" />
+                    Add Seller
+                  </Button>
+                </>
               )}
               <Button 
                 variant="outline" 
@@ -137,7 +150,10 @@ const Index = () => {
               />
             </div>
             <div className="h-full overflow-hidden">
-              <ChatWindow groupId={selectedGroupId} />
+              <ChatWindow 
+                groupId={selectedGroupId} 
+                onRequestSeller={() => setUpgradeDialogOpen(true)}
+              />
             </div>
           </div>
         </div>
@@ -152,6 +168,11 @@ const Index = () => {
       <SellerRequestsDialog
         open={sellerRequestsOpen}
         onOpenChange={setSellerRequestsOpen}
+      />
+      
+      <AddVerifiedSellerDialog
+        open={addSellerDialogOpen}
+        onOpenChange={setAddSellerDialogOpen}
       />
       
       <UpgradeToSellerDialog

@@ -60,25 +60,10 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdmin, onCreateGro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: groupMembers } = await supabase
-        .from("group_members")
-        .select("group_id")
-        .eq("user_id", user.id);
-
-      if (!groupMembers) return;
-
-      const groupIds = groupMembers.map((gm) => gm.group_id);
-
-      if (groupIds.length === 0) {
-        setGroups([]);
-        setLoading(false);
-        return;
-      }
-
+      // Fetch ALL groups (users can see all markets)
       const { data: groups } = await supabase
         .from("groups")
         .select("*")
-        .in("id", groupIds)
         .order("created_at", { ascending: false });
 
       setGroups(groups || []);
