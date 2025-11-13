@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Check, X } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, X, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 interface SellerRequest {
@@ -19,6 +20,8 @@ interface SellerRequest {
   request_message: string | null;
   photo_url: string | null;
   vnin_share_code: string | null;
+  admin_message: string | null;
+  admin_message_sent_at: string | null;
   created_at: string;
   profiles: {
     full_name: string;
@@ -35,6 +38,7 @@ export const SellerRequestsDialog = ({
   onOpenChange,
 }: SellerRequestsDialogProps) => {
   const [requests, setRequests] = useState<SellerRequest[]>([]);
+  const [adminMessages, setAdminMessages] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open) {
@@ -107,6 +111,34 @@ export const SellerRequestsDialog = ({
     }
   };
 
+  const handleRequestMoreInfo = async (requestId: string) => {
+    const message = adminMessages[requestId];
+    if (!message?.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("seller_requests")
+        .update({
+          status: "needs_more_info",
+          admin_message: message,
+          admin_message_sent_at: new Date().toISOString(),
+        })
+        .eq("id", requestId);
+
+      if (error) throw error;
+
+      toast.success("Request sent to applicant");
+      setAdminMessages({ ...adminMessages, [requestId]: "" });
+      fetchRequests();
+    } catch (error: any) {
+      console.error("Request more info error:", error);
+      toast.error(error.message || "Failed to send request");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -159,7 +191,27 @@ export const SellerRequestsDialog = ({
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2 justify-end">
+                  
+                  {/* Admin message section */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Request More Information</label>
+                    <Textarea
+                      placeholder="Ask the applicant for additional documentation or clarification..."
+                      value={adminMessages[request.id] || ""}
+                      onChange={(e) => setAdminMessages({ ...adminMessages, [request.id]: e.target.value })}
+                      className="min-h-[80px]"
+                    />
+                  </div>
+
+                  <div className="flex gap-2 justify-end flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRequestMoreInfo(request.id)}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Request Info
+                    </Button>
                     <Button
                       size="sm"
                       variant="default"
