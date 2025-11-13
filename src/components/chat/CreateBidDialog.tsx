@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,24 +6,60 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Store } from "lucide-react";
 
 interface CreateBidDialogProps {
   groupId: string;
   userId: string;
   isOpen: boolean;
   onClose: () => void;
+  onRequestSeller: () => void;
 }
 
-export const CreateBidDialog = ({ groupId, userId, isOpen, onClose }: CreateBidDialogProps) => {
+export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSeller }: CreateBidDialogProps) => {
   const [itemName, setItemName] = useState("");
   const [description, setDescription] = useState("");
   const [startingPrice, setStartingPrice] = useState("");
   const [duration, setDuration] = useState("24");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [creating, setCreating] = useState(false);
+  const [isSeller, setIsSeller] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
+
+  useEffect(() => {
+    checkSellerRole();
+  }, [userId, isOpen]);
+
+  const checkSellerRole = async () => {
+    if (!isOpen) return;
+    
+    setCheckingRole(true);
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "seller")
+      .single();
+    
+    setIsSeller(!!data);
+    setCheckingRole(false);
+  };
 
   const handleCreate = async () => {
+    if (!isSeller) {
+      toast.error("You cannot create a bid unless you become a seller. Click 'Become Seller' to request seller status.", {
+        duration: 5000,
+        action: {
+          label: "Become Seller",
+          onClick: () => {
+            onClose();
+            onRequestSeller();
+          }
+        }
+      });
+      return;
+    }
+
     if (!itemName.trim() || !startingPrice) {
       toast.error("Please fill in item name and starting price");
       return;
@@ -81,6 +117,48 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose }: CreateBidD
       setCreating(false);
     }
   };
+
+  if (checkingRole) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!isSeller) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Seller Status Required</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-muted-foreground">
+              You cannot create a bid unless you become a seller.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Please click "Become Seller" to request seller status and follow the verification process.
+            </p>
+            <Button 
+              onClick={() => {
+                onClose();
+                onRequestSeller();
+              }}
+              className="w-full gap-2"
+            >
+              <Store className="h-4 w-4" />
+              Request Seller Status
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

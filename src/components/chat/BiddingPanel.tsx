@@ -4,8 +4,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Gavel, Timer, TrendingUp, Trophy, ExternalLink } from "lucide-react";
+import { Gavel, Timer, TrendingUp, Trophy, ExternalLink, User } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { BidWinnerNotification } from "./BidWinnerNotification";
 import { formatCurrency } from "@/utils/currency";
 
@@ -42,6 +43,7 @@ interface BiddingPanelProps {
 }
 
 export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
+  const navigate = useNavigate();
   const [bids, setBids] = useState<Bid[]>([]);
   const [offerAmounts, setOfferAmounts] = useState<Record<string, string>>({});
   const [currency, setCurrency] = useState<"USD" | "NGN">("USD");
@@ -215,6 +217,17 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
                   <p className="text-sm text-muted-foreground">
                     By {bid.profiles?.full_name || "User"}
                   </p>
+                  {bid.winner_id && bid.status === "closed" && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0 gap-1 text-primary"
+                      onClick={() => navigate(`/seller/${bid.winner_id}`)}
+                    >
+                      <User className="h-3 w-3" />
+                      View Winner Profile
+                    </Button>
+                  )}
                 </div>
                 <Badge variant="secondary" className="gap-1">
                   <Timer className="h-3 w-3" />

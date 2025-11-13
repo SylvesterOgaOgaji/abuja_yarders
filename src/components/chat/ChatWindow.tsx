@@ -33,13 +33,14 @@ interface Message {
 
 interface ChatWindowProps {
   groupId: string | null;
+  onRequestSeller: () => void;
 }
 
 const messageSchema = z.object({
   content: z.string().min(1, "Message cannot be empty").max(5000, "Message too long"),
 });
 
-export const ChatWindow = ({ groupId }: ChatWindowProps) => {
+export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
@@ -372,6 +373,7 @@ export const ChatWindow = ({ groupId }: ChatWindowProps) => {
           userId={userId}
           isOpen={showCreateBid}
           onClose={() => setShowCreateBid(false)}
+          onRequestSeller={onRequestSeller}
         />
       )}
 
