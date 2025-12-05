@@ -39,6 +39,7 @@ export const SellerRequestsDialog = ({
 }: SellerRequestsDialogProps) => {
   const [requests, setRequests] = useState<SellerRequest[]>([]);
   const [adminMessages, setAdminMessages] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -47,7 +48,9 @@ export const SellerRequestsDialog = ({
   }, [open]);
 
   const fetchRequests = async () => {
-    const { data } = await supabase
+    setLoading(true);
+    console.log("Fetching seller requests...");
+    const { data, error } = await supabase
       .from("seller_requests")
       .select(
         `
@@ -58,6 +61,15 @@ export const SellerRequestsDialog = ({
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
+    console.log("Seller requests response:", { data, error });
+    setLoading(false);
+    
+    if (error) {
+      console.error("Error fetching seller requests:", error);
+      toast.error("Failed to load seller requests");
+      return;
+    }
+
     if (data) {
       setRequests(data as any);
     }
@@ -65,6 +77,12 @@ export const SellerRequestsDialog = ({
 
   const handleApprove = async (requestId: string, userId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in");
+        return;
+      }
+
       // Add seller role
       const { error: roleError } = await supabase
         .from("user_roles")
@@ -78,6 +96,7 @@ export const SellerRequestsDialog = ({
         .update({
           status: "approved",
           reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id,
         })
         .eq("id", requestId);
 
@@ -93,11 +112,18 @@ export const SellerRequestsDialog = ({
 
   const handleReject = async (requestId: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in");
+        return;
+      }
+
       const { error } = await supabase
         .from("seller_requests")
         .update({
           status: "rejected",
           reviewed_at: new Date().toISOString(),
+          reviewed_by: user.id,
         })
         .eq("id", requestId);
 
@@ -147,7 +173,11 @@ export const SellerRequestsDialog = ({
         </DialogHeader>
 
         <ScrollArea className="max-h-[500px]">
-          {requests.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-muted-foreground py-8">
+              Loading requests...
+            </p>
+          ) : requests.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">
               No pending requests
             </p>
