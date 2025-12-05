@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Users, Plus } from "lucide-react";
+import { Users, Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MemberManagementDialog } from "@/components/admin/MemberManagementDialog";
+import { GroupMembersDialog } from "@/components/admin/GroupMembersDialog";
 
 interface Group {
   id: string;
@@ -22,6 +23,8 @@ interface GroupListProps {
 export const GroupList = ({ selectedGroupId, onSelectGroup, isAdmin, onCreateGroup }: GroupListProps) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewMembersGroupId, setViewMembersGroupId] = useState<string | null>(null);
+  const [viewMembersGroupName, setViewMembersGroupName] = useState<string>("");
 
   useEffect(() => {
     const setupGroupsSubscription = async () => {
@@ -121,17 +124,42 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdmin, onCreateGro
                 </div>
               </div>
               {isAdmin && selectedGroupId === group.id && (
-                <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t pt-2 sm:pt-3 bg-muted/30">
+                <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t pt-2 sm:pt-3 bg-muted/30 flex gap-2 flex-wrap">
                   <MemberManagementDialog
                     groupId={group.id}
                     groupName={group.name}
                   />
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewMembersGroupId(group.id);
+                      setViewMembersGroupName(group.name);
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                    View Members
+                  </Button>
                 </div>
               )}
             </Card>
           ))}
         </div>
       )}
+      
+      <GroupMembersDialog
+        open={!!viewMembersGroupId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewMembersGroupId(null);
+            setViewMembersGroupName("");
+          }
+        }}
+        groupId={viewMembersGroupId || ""}
+        groupName={viewMembersGroupName}
+      />
     </div>
   );
 };

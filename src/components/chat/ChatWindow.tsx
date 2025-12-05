@@ -4,7 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Send, Gavel } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Send, Gavel, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
@@ -13,6 +14,7 @@ import { MediaLightbox } from "./MediaLightbox";
 import { MessageReactions } from "./MessageReactions";
 import { CreateBidDialog } from "./CreateBidDialog";
 import { BiddingPanel } from "./BiddingPanel";
+import { UserProfilePopover } from "./UserProfilePopover";
 
 interface MediaUpload {
   id: string;
@@ -29,6 +31,7 @@ interface Message {
     full_name: string;
   };
   media_uploads: MediaUpload[];
+  isSeller?: boolean;
 }
 
 interface ChatWindowProps {
@@ -166,19 +169,22 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
       .eq("group_id", groupId)
       .order("created_at", { ascending: true });
 
-    // Fetch profiles separately
+    // Fetch profiles and seller roles separately
     if (data && data.length > 0) {
       const userIds = [...new Set(data.map(m => m.user_id))];
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", userIds);
+      
+      const [profilesResult, rolesResult] = await Promise.all([
+        supabase.from("profiles").select("id, full_name").in("id", userIds),
+        supabase.from("user_roles").select("user_id, role").in("user_id", userIds).eq("role", "seller")
+      ]);
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
+      const sellerSet = new Set(rolesResult.data?.map(r => r.user_id) || []);
       
       const messagesWithProfiles = data.map(msg => ({
         ...msg,
-        profiles: profileMap.get(msg.user_id)
+        profiles: profileMap.get(msg.user_id),
+        isSeller: sellerSet.has(msg.user_id)
       }));
 
       setMessages(messagesWithProfiles as any);
@@ -269,9 +275,19 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
                   }`}
                 >
                   {!isOwn && (
-                    <p className="text-xs font-semibold mb-1 opacity-80">
-                      {message.profiles?.full_name || "User"}
-                    </p>
+                    <UserProfilePopover 
+                      userId={message.user_id} 
+                      userName={message.profiles?.full_name || "User"}
+                    >
+                      <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
+                        <span className="text-xs font-semibold opacity-80">
+                          {message.profiles?.full_name || "User"}
+                        </span>
+                        {message.isSeller && (
+                          <BadgeCheck className="h-3 w-3 text-blue-500" />
+                        )}
+                      </button>
+                    </UserProfilePopover>
                   )}
                   <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                   

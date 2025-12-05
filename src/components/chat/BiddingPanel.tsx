@@ -4,11 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Gavel, Timer, TrendingUp, Trophy, ExternalLink, User } from "lucide-react";
+import { Gavel, Timer, TrendingUp, Trophy, ExternalLink, User, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { BidWinnerNotification } from "./BidWinnerNotification";
 import { formatCurrency } from "@/utils/currency";
+import { UserProfilePopover } from "./UserProfilePopover";
 
 interface Bid {
   id: string;
@@ -27,6 +28,7 @@ interface Bid {
   profiles: {
     full_name: string;
   };
+  isSeller?: boolean;
   bid_offers: Array<{
     id: string;
     offer_amount: number;
@@ -111,22 +113,24 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
       .order("created_at", { ascending: false });
 
     if (bidsData && bidsData.length > 0) {
-      // Fetch profiles
+      // Fetch profiles and seller roles
       const userIds = [...new Set([
         ...bidsData.map(b => b.user_id),
         ...bidsData.flatMap(b => b.bid_offers.map(o => o.user_id))
       ])];
 
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name")
-        .in("id", userIds);
+      const [profilesResult, rolesResult] = await Promise.all([
+        supabase.from("profiles").select("id, full_name").in("id", userIds),
+        supabase.from("user_roles").select("user_id, role").in("user_id", userIds).eq("role", "seller")
+      ]);
 
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
+      const sellerSet = new Set(rolesResult.data?.map(r => r.user_id) || []);
 
       const bidsWithProfiles = bidsData.map(bid => ({
         ...bid,
         profiles: profileMap.get(bid.user_id),
+        isSeller: sellerSet.has(bid.user_id),
         bid_offers: bid.bid_offers.map(offer => ({
           ...offer,
           profiles: profileMap.get(offer.user_id)
@@ -214,9 +218,17 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-lg">{bid.item_name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    By {bid.profiles?.full_name || "User"}
-                  </p>
+                  <UserProfilePopover 
+                    userId={bid.user_id} 
+                    userName={bid.profiles?.full_name || "User"}
+                  >
+                    <button className="flex items-center gap-1 text-sm text-muted-foreground hover:underline cursor-pointer">
+                      By {bid.profiles?.full_name || "User"}
+                      {bid.isSeller && (
+                        <BadgeCheck className="h-3 w-3 text-blue-500" />
+                      )}
+                    </button>
+                  </UserProfilePopover>
                   {bid.winner_id && bid.status === "closed" && (
                     <Button
                       variant="link"
