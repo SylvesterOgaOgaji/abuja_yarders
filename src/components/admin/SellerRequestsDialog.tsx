@@ -50,29 +50,44 @@ export const SellerRequestsDialog = ({
   const fetchRequests = async () => {
     setLoading(true);
     console.log("Fetching seller requests...");
-    const { data, error } = await supabase
+    
+    // Fetch seller requests
+    const { data: requestsData, error: requestsError } = await supabase
       .from("seller_requests")
-      .select(
-        `
-        *,
-        profiles:user_id (full_name)
-      `
-      )
+      .select("*")
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
-    console.log("Seller requests response:", { data, error });
-    setLoading(false);
-    
-    if (error) {
-      console.error("Error fetching seller requests:", error);
+    if (requestsError) {
+      console.error("Error fetching seller requests:", requestsError);
       toast.error("Failed to load seller requests");
+      setLoading(false);
       return;
     }
 
-    if (data) {
-      setRequests(data as any);
+    if (!requestsData || requestsData.length === 0) {
+      setRequests([]);
+      setLoading(false);
+      return;
     }
+
+    // Fetch profiles for the user_ids
+    const userIds = [...new Set(requestsData.map(r => r.user_id))];
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", userIds);
+
+    // Merge profiles with requests
+    const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+    const enrichedRequests = requestsData.map(request => ({
+      ...request,
+      profiles: profilesMap.get(request.user_id) || { full_name: "Unknown User" }
+    }));
+
+    console.log("Seller requests response:", enrichedRequests);
+    setRequests(enrichedRequests as any);
+    setLoading(false);
   };
 
   const handleApprove = async (requestId: string, userId: string) => {
