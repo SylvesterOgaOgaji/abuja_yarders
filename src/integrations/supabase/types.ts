@@ -332,6 +332,8 @@ export type Database = {
       }
       seller_requests: {
         Row: {
+          admin_message: string | null
+          admin_message_sent_at: string | null
           created_at: string
           id: string
           photo_url: string | null
@@ -343,6 +345,8 @@ export type Database = {
           vnin_share_code: string | null
         }
         Insert: {
+          admin_message?: string | null
+          admin_message_sent_at?: string | null
           created_at?: string
           id?: string
           photo_url?: string | null
@@ -354,6 +358,8 @@ export type Database = {
           vnin_share_code?: string | null
         }
         Update: {
+          admin_message?: string | null
+          admin_message_sent_at?: string | null
           created_at?: string
           id?: string
           photo_url?: string | null
