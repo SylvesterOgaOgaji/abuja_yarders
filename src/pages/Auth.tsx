@@ -88,9 +88,12 @@ const Auth = () => {
           <CardTitle className="text-2xl sm:text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Abuja Yarders MeetingPoint
           </CardTitle>
-          <CardDescription className="text-center">
-            {isLogin ? "Sign in to your account" : "Create your account"}
+          <CardDescription className="text-center text-muted-foreground">
+            Leave no Yarder Behind
           </CardDescription>
+          <p className="text-center text-sm text-muted-foreground mt-2">
+            {isLogin ? "Sign in to your account" : "Create your account"}
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
