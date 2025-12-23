@@ -72,9 +72,14 @@ const Index = () => {
         <div className="w-full px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
             <div className="flex items-center gap-2 min-w-0 flex-shrink">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
-                Abuja Yarders MeetingPoint
-              </h1>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
+                  Abuja Yarders MeetingPoint
+                </h1>
+                <p className="text-[10px] sm:text-xs text-primary-foreground/70 italic">
+                  Leave no Yarder Behind
+                </p>
+              </div>
               <div className="hidden sm:flex gap-1 md:gap-2 flex-shrink-0">
                 {isAdmin && (
                   <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-medium whitespace-nowrap">
