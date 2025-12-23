@@ -8,6 +8,7 @@ import { ChatWindow } from "@/components/chat/ChatWindow";
 import { CreateGroupDialog } from "@/components/admin/CreateGroupDialog";
 import { SellerRequestsDialog } from "@/components/admin/SellerRequestsDialog";
 import { AddVerifiedSellerDialog } from "@/components/admin/AddVerifiedSellerDialog";
+import { CreateSubAdminDialog } from "@/components/admin/CreateSubAdminDialog";
 import { UpgradeToSellerDialog } from "@/components/profile/UpgradeToSellerDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
@@ -23,7 +24,7 @@ const Index = () => {
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
-  const { roles, isAdmin, isSeller, loading: rolesLoading } = useUserRole(userId);
+  const { roles, isAdmin, isSubAdmin, isAdminOrSubAdmin, isSeller, loading: rolesLoading } = useUserRole(userId);
 
   useEffect(() => {
     checkAuth();
@@ -72,13 +73,19 @@ const Index = () => {
           <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
             <div className="flex items-center gap-2 min-w-0 flex-shrink">
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
-                Sale4Me
+                Abuja Yarders MeetingPoint
               </h1>
               <div className="hidden sm:flex gap-1 md:gap-2 flex-shrink-0">
                 {isAdmin && (
                   <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-primary text-primary-foreground text-[10px] md:text-xs font-medium whitespace-nowrap">
                     <Shield className="h-2.5 w-2.5 md:h-3 md:w-3" />
                     Admin
+                  </div>
+                )}
+                {isSubAdmin && !isAdmin && (
+                  <div className="flex items-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-purple-600 text-white text-[10px] md:text-xs font-medium whitespace-nowrap">
+                    <Shield className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                    Sub-Admin
                   </div>
                 )}
                 {isSeller && (
@@ -89,8 +96,8 @@ const Index = () => {
                 )}
               </div>
             </div>
-            <div className="flex gap-1 sm:gap-2 flex-shrink-0">
-              {!isSeller && !isAdmin && (
+            <div className="flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
+              {!isSeller && !isAdminOrSubAdmin && (
                 <Button 
                   variant="outline" 
                   onClick={() => setUpgradeDialogOpen(true)} 
@@ -102,7 +109,7 @@ const Index = () => {
                   <span className="sm:hidden">Seller</span>
                 </Button>
               )}
-              {isAdmin && (
+              {isAdminOrSubAdmin && (
                 <>
                   <Button 
                     variant="outline" 
@@ -122,6 +129,9 @@ const Index = () => {
                     Add Seller
                   </Button>
                 </>
+              )}
+              {isAdmin && (
+                <CreateSubAdminDialog />
               )}
               <Button 
                 variant="outline" 
@@ -145,7 +155,7 @@ const Index = () => {
                 key={refreshKey}
                 selectedGroupId={selectedGroupId}
                 onSelectGroup={setSelectedGroupId}
-                isAdmin={isAdmin}
+                isAdminOrSubAdmin={isAdminOrSubAdmin}
                 onCreateGroup={() => setCreateDialogOpen(true)}
               />
             </div>
