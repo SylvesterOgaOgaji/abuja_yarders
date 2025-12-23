@@ -85,8 +85,8 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary to-background p-4">
       <Card className="w-full max-w-md shadow-[var(--shadow-medium)]">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Sale4Me
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Abuja Yarders MeetingPoint
           </CardTitle>
           <CardDescription className="text-center">
             {isLogin ? "Sign in to your account" : "Create your account"}
