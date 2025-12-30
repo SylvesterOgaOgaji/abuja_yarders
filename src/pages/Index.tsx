@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Store, UserPlus } from "lucide-react";
+import { LogOut, Shield, Store, UserPlus, User } from "lucide-react";
 import { GroupList } from "@/components/chat/GroupList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { CreateGroupDialog } from "@/components/admin/CreateGroupDialog";
@@ -10,6 +10,7 @@ import { SellerRequestsDialog } from "@/components/admin/SellerRequestsDialog";
 import { AddVerifiedSellerDialog } from "@/components/admin/AddVerifiedSellerDialog";
 import { CreateSubAdminDialog } from "@/components/admin/CreateSubAdminDialog";
 import { UpgradeToSellerDialog } from "@/components/profile/UpgradeToSellerDialog";
+import { AllMembersDialog } from "@/components/AllMembersDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 
@@ -102,6 +103,16 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
+              <AllMembersDialog />
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/profile")} 
+                size="sm"
+                className="gap-1 text-xs px-2 sm:px-3"
+              >
+                <User className="h-3 w-3" />
+                <span className="hidden sm:inline">Profile</span>
+              </Button>
               {!isSeller && !isAdminOrSubAdmin && (
                 <Button 
                   variant="outline" 
