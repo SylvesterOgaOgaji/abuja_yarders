@@ -100,12 +100,26 @@ export const AllMembersDialog = () => {
       supabase
         .from("profiles")
         .select("id, full_name, area_council, town, phone_number, years_in_yard, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement")
-        .in("id", userIds) as any,
+        .in("id", userIds),
       supabase.from("user_roles").select("user_id, role").in("user_id", userIds),
     ]);
 
-    const profileMap = new Map(
-      profilesResult.data?.map((p) => [p.id, p]) || []
+    // Define partial type for profile data returned by query
+    type ProfileData = {
+      id: string;
+      full_name: string | null;
+      area_council: string | null;
+      town: string | null;
+      phone_number: string | null;
+      years_in_yard: string | null;
+      commitment_followup_scale: number | null;
+      commitment_financial_scale: number | null;
+      volunteering_capacity: string | null;
+      confirmation_agreement: boolean | null;
+    };
+
+    const profileMap = new Map<string, ProfileData>(
+      (profilesResult.data as unknown as ProfileData[])?.map((p) => [p.id, p]) || []
     );
     const rolesMap = new Map<string, Set<string>>();
 
