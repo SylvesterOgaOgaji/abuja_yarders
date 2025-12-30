@@ -15,7 +15,6 @@ interface SellerProfile {
   seller_requests: Array<{
     status: string;
     photo_url: string | null;
-    vnin_share_code: string | null;
     created_at: string;
   }>;
 }
@@ -59,7 +58,7 @@ export default function SellerProfile() {
       // Fetch approved seller request for verification details
       const { data: requestData } = await supabase
         .from("seller_requests")
-        .select("status, photo_url, vnin_share_code, created_at")
+        .select("status, photo_url, created_at")
         .eq("user_id", userId)
         .eq("status", "approved")
         .order("created_at", { ascending: false })
@@ -159,19 +158,8 @@ export default function SellerProfile() {
                     <Shield className="h-5 w-5 text-primary" />
                     <h3 className="font-semibold">Verification Details</h3>
                   </div>
-                  
-                  <div className="space-y-4">
-                    {approvedRequest.vnin_share_code && (
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground mb-1">
-                          VNIN Verification
-                        </p>
-                        <Badge variant="secondary" className="font-mono">
-                          {approvedRequest.vnin_share_code}
-                        </Badge>
-                      </div>
-                    )}
 
+                  <div className="space-y-4">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-1">
                         Verified On

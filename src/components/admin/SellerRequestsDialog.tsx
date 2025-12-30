@@ -19,7 +19,6 @@ interface SellerRequest {
   status: string;
   request_message: string | null;
   photo_url: string | null;
-  vnin_share_code: string | null;
   admin_message: string | null;
   admin_message_sent_at: string | null;
   created_at: string;
@@ -50,7 +49,7 @@ export const SellerRequestsDialog = ({
   const fetchRequests = async () => {
     setLoading(true);
     console.log("Fetching seller requests...");
-    
+
     // Fetch seller requests
     const { data: requestsData, error: requestsError } = await supabase
       .from("seller_requests")
@@ -206,9 +205,9 @@ export const SellerRequestsDialog = ({
                   <div className="flex items-start gap-4">
                     {request.photo_url && (
                       <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-primary flex-shrink-0">
-                        <img 
-                          src={request.photo_url} 
-                          alt="Applicant" 
+                        <img
+                          src={request.photo_url}
+                          alt="Applicant"
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -220,12 +219,7 @@ export const SellerRequestsDialog = ({
                         </p>
                         <Badge variant="secondary">{request.status}</Badge>
                       </div>
-                      {request.vnin_share_code && (
-                        <div className="mb-2">
-                          <p className="text-xs font-medium text-muted-foreground">VNIN Share Code:</p>
-                          <p className="text-sm font-mono">{request.vnin_share_code}</p>
-                        </div>
-                      )}
+
                       {request.request_message && (
                         <p className="text-sm text-muted-foreground mb-2">
                           {request.request_message}
@@ -236,7 +230,7 @@ export const SellerRequestsDialog = ({
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Admin message section */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Request More Information</label>

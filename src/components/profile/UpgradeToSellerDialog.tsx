@@ -26,7 +26,6 @@ export const UpgradeToSellerDialog = ({
   userId,
 }: UpgradeToSellerDialogProps) => {
   const [message, setMessage] = useState("");
-  const [vninShareCode, setVninShareCode] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -34,7 +33,6 @@ export const UpgradeToSellerDialog = ({
   useEffect(() => {
     if (!open) {
       setMessage("");
-      setVninShareCode("");
       setPhoto(null);
       setPhotoPreview(null);
     }
@@ -66,11 +64,6 @@ export const UpgradeToSellerDialog = ({
       return;
     }
 
-    if (!vninShareCode.trim()) {
-      toast.error("Please provide your VNIN share code from NINAuth");
-      return;
-    }
-
     if (!photo) {
       toast.error("Please upload your photo");
       return;
@@ -82,7 +75,7 @@ export const UpgradeToSellerDialog = ({
       // Upload photo to storage
       const fileExt = photo.name.split('.').pop();
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from('seller-verification')
         .upload(fileName, photo);
@@ -98,7 +91,6 @@ export const UpgradeToSellerDialog = ({
       const { error } = await supabase.from("seller_requests").insert({
         user_id: userId,
         request_message: message.trim(),
-        vnin_share_code: vninShareCode.trim(),
         photo_url: publicUrl,
         status: "pending",
       });
@@ -152,19 +144,6 @@ export const UpgradeToSellerDialog = ({
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="vnin">VNIN Share Code *</Label>
-            <Input
-              id="vnin"
-              value={vninShareCode}
-              onChange={(e) => setVninShareCode(e.target.value)}
-              placeholder="Enter your VNIN from NINAuth app"
-            />
-            <p className="text-xs text-muted-foreground">
-              Generated from NMIC app (NINAuth) under share code
-            </p>
           </div>
 
           <div className="space-y-2">
