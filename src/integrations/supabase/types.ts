@@ -410,6 +410,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_group_name_for_town: { Args: { town_name: string }; Returns: string }
       get_user_media_count_today: {
         Args: { p_media_type: string; p_user_id: string }
         Returns: number
