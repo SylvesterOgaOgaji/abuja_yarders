@@ -305,28 +305,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          area_council: string | null
           created_at: string
           currency: string
           full_name: string
           id: string
+          phone_number: string | null
           role: Database["public"]["Enums"]["app_role"]
+          town: string | null
           updated_at: string
+          years_in_yard: string | null
         }
         Insert: {
+          area_council?: string | null
           created_at?: string
           currency?: string
           full_name: string
           id: string
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          town?: string | null
           updated_at?: string
+          years_in_yard?: string | null
         }
         Update: {
+          area_council?: string | null
           created_at?: string
           currency?: string
           full_name?: string
           id?: string
+          phone_number?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          town?: string | null
           updated_at?: string
+          years_in_yard?: string | null
         }
         Relationships: []
       }
