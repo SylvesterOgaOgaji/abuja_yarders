@@ -9,7 +9,7 @@ export const initializeRevenueCat = async () => {
       apiKey: import.meta.env.VITE_REVENUECAT_API_KEY || 'your_revenuecat_api_key_here',
       appUserID: undefined, // Will be set when user logs in
     });
-    
+
     // Enable debug logs in development
     if (import.meta.env.DEV) {
       await Purchases.setLogLevel({ level: LOG_LEVEL.DEBUG });
@@ -42,7 +42,7 @@ export const purchasePackage = async (packageToPurchase: any) => {
     const purchaseResult = await Purchases.purchasePackage({
       aPackage: packageToPurchase,
     });
-    
+
     return {
       success: true,
       customerInfo: purchaseResult.customerInfo,
@@ -70,7 +70,7 @@ export const checkSubscriptionStatus = async () => {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
     const hasActiveSubscription = Object.keys(customerInfo.customerInfo.entitlements.active).length > 0;
-    
+
     return {
       isSubscribed: hasActiveSubscription,
       entitlements: customerInfo.customerInfo.entitlements.active,

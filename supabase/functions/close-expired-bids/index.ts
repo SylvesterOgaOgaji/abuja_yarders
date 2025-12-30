@@ -11,9 +11,21 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // 1. Verify Authorization (Must be Service Role)
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (!authHeader || authHeader.replace('Bearer ', '') !== serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 2. Initialize Supabase Client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      serviceRoleKey ?? ''
     );
 
     console.log('Checking for expired bids...');
@@ -102,23 +114,24 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        processed: expiredBids?.length || 0 
+      JSON.stringify({
+        success: true,
+        processed: expiredBids?.length || 0
       }),
-      { 
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
+        status: 200
       }
     );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in close-expired-bids:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
+      JSON.stringify({ error: errorMessage }),
+      {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500
       }
     );
   }
