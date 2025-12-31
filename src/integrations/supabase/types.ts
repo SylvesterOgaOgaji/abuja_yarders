@@ -463,7 +463,56 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      user_commitments: {
+        Row: {
+          amount_paid: number
+          amount_pledged: number
+          commitment_type: string
+          created_at: string
+          description: string | null
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid?: number
+          amount_pledged?: number
+          commitment_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          amount_pledged?: number
+          commitment_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_commitments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

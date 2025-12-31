@@ -13,6 +13,8 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SellerProfile from "./pages/SellerProfile";
 import DashboardCMS from "./pages/admin/DashboardCMS";
+import CommitmentAnalysis from "./pages/admin/CommitmentAnalysis";
+import Commitments from "./pages/Commitments";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import Push Hook
@@ -61,6 +63,8 @@ const App = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
             <Route path="/admin/cms" element={<DashboardCMS />} />
+            <Route path="/admin/commitments" element={<CommitmentAnalysis />} />
+            <Route path="/commitments" element={<Commitments />} />
             <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
