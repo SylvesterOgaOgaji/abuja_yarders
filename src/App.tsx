@@ -12,6 +12,7 @@ import { App as AppPlugin } from "@capacitor/app"; // Import App plugin
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SellerProfile from "./pages/SellerProfile";
+import DashboardCMS from "./pages/admin/DashboardCMS";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import Push Hook
@@ -59,6 +60,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
+            <Route path="/admin/cms" element={<DashboardCMS />} />
             <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

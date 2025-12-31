@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Store, UserPlus, User } from "lucide-react";
+import { LogOut, Shield, Store, UserPlus, User, LayoutTemplate } from "lucide-react";
 import { GroupList } from "@/components/chat/GroupList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { AdvertDashboard } from "@/components/dashboard/AdvertDashboard";
@@ -148,7 +148,18 @@ const Index = () => {
                 </>
               )}
               {isAdmin && (
-                <CreateSubAdminDialog />
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/admin/cms")}
+                    size="sm"
+                    className="gap-1 text-xs px-2 sm:px-3"
+                  >
+                    <LayoutTemplate className="h-3 w-3" />
+                    <span className="hidden sm:inline">CMS</span>
+                  </Button>
+                  <CreateSubAdminDialog />
+                </>
               )}
               <Button
                 variant="outline"

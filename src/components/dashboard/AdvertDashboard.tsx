@@ -257,7 +257,9 @@ export const AdvertDashboard = () => {
                                         </div>
                                         <CardHeader className="p-4 pb-2">
                                             <CardTitle className="text-lg">{member.name}</CardTitle>
-                                            <Badge variant="outline" className="w-fit text-xs font-normal bg-secondary">{member.role}</Badge>
+                                            <Badge className="w-fit text-xs font-medium bg-black hover:bg-black/90 text-[#D4AF37] border-[#D4AF37]/30 font-serif tracking-wider uppercase shadow-sm mt-1">
+                                                {member.role}
+                                            </Badge>
                                         </CardHeader>
                                         <CardContent className="p-4 pt-1">
                                             <p className="text-xs text-muted-foreground line-clamp-3">
