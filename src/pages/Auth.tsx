@@ -462,7 +462,8 @@ const Auth = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-[var(--gradient-primary)] hover:opacity-90 transition-opacity mt-6"
+                  size="lg"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg shadow-md hover:shadow-lg transition-all mt-6 py-6"
                   disabled={loading}
                 >
                   {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}

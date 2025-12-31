@@ -399,13 +399,39 @@ export default function DashboardCMS() {
                     <h1 className="text-2xl font-bold">Dashboard CMS</h1>
                 </div>
 
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-5">
-                        <TabsTrigger value="content">Content & Text</TabsTrigger>
-                        <TabsTrigger value="exco">Exco Members</TabsTrigger>
-                        <TabsTrigger value="calls">Active Calls</TabsTrigger>
-                        <TabsTrigger value="groups">Towns / Groups</TabsTrigger>
-                        <TabsTrigger value="legal">Legal & Policies</TabsTrigger>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full space-y-4">
+                    {/* Mobile Navigation (Dropdown) */}
+                    <div className="md:hidden w-full">
+                        <Label htmlFor="cms-nav" className="mb-2 block text-sm font-medium">Navigate CMS Sections</Label>
+                        <div className="relative">
+                            <select
+                                id="cms-nav"
+                                className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none pointer-events-auto z-50"
+                                value={activeTab}
+                                onChange={(e) => setActiveTab(e.target.value)}
+                            >
+                                <option value="content">Content & Text</option>
+                                <option value="exco">Exco Members</option>
+                                <option value="calls">Active Calls</option>
+                                <option value="groups">Towns / Groups</option>
+                                <option value="legal">Legal & Policies</option>
+                            </select>
+                            {/* Chevron Icon */}
+                            <div className="absolute right-3 top-3 pointer-events-none">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-50">
+                                    <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop Navigation (Tabs) */}
+                    <TabsList className="hidden md:grid w-full grid-cols-5 h-auto py-2">
+                        <TabsTrigger value="content" className="py-2">Content & Text</TabsTrigger>
+                        <TabsTrigger value="exco" className="py-2">Exco Members</TabsTrigger>
+                        <TabsTrigger value="calls" className="py-2">Active Calls</TabsTrigger>
+                        <TabsTrigger value="groups" className="py-2">Towns / Groups</TabsTrigger>
+                        <TabsTrigger value="legal" className="py-2">Legal & Policies</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="content" className="space-y-4 mt-4">
