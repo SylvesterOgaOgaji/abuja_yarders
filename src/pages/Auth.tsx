@@ -184,7 +184,7 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-[var(--shadow-medium)] max-h-[90vh] overflow-y-auto">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl sm:text-3xl font-bold text-center bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            Abuja Yarders MeetingPoint
+            Abuja Yarder Meeting Point
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground">
             Leave no Yarder Behind

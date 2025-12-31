@@ -76,7 +76,7 @@ const Index = () => {
             <div className="flex items-center gap-2 min-w-0 flex-shrink">
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
-                  Abuja Yarders MeetingPoint
+                  Abuja Yarder Meeting Point
                 </h1>
                 <p className="text-[10px] sm:text-xs text-primary-foreground/70 italic">
                   Leave no Yarder Behind

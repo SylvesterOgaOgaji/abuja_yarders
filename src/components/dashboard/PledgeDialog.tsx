@@ -29,8 +29,8 @@ export function PledgeDialog({ open, onOpenChange, call, userId, onSuccess }: Pl
         if (!userId || !call) return;
 
         // Basic validation
-        if (call.category === 'financial' && !amount) {
-            toast.error("Please enter an amount for financial support");
+        if (!amount && !note) {
+            toast.error("Please enter a pledge amount or a note");
             return;
         }
 
@@ -79,18 +79,16 @@ export function PledgeDialog({ open, onOpenChange, call, userId, onSuccess }: Pl
                 </DialogHeader>
 
                 <div className="grid gap-4 py-4">
-                    {call.category === 'financial' && (
-                        <div className="space-y-2">
-                            <Label htmlFor="amount">Pledge Amount (₦)</Label>
-                            <Input
-                                id="amount"
-                                type="number"
-                                placeholder="e.g. 5000"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                            />
-                        </div>
-                    )}
+                    <div className="space-y-2">
+                        <Label htmlFor="amount">Pledge Amount (₦) - Optional</Label>
+                        <Input
+                            id="amount"
+                            type="number"
+                            placeholder="e.g. 5000"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                        />
+                    </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="note">Message / Note</Label>

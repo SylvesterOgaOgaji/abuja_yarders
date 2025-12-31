@@ -1,6 +1,6 @@
-# Sale4Me Connect
-
-Sale4Me Connect is a robust, full-featured marketplace and community engagement platform designed to foster connection, facilitate commerce, and streamline administration. Built with modern web technologies, it bridges the gap between a vibrant community and a functional marketplace.
+# Abuja Yarder Meeting Point
+ 
+Abuja Yarder Meeting Point is a robust, full-featured marketplace and community engagement platform designed to foster connection, facilitate commerce, and streamline administration for the Abuja Yarders community. Built with modern web technologies, it bridges the gap between a vibrant community and a functional marketplace.
 
 ## Project Overview
 
@@ -98,4 +98,6 @@ The detailed roadmap includes:
 
 ---
 
-**Built with ❤️ by the Sale4Me Connect Team**
+**Built by Sylvester Oga Ogaji**  
+Donated to the **Abuja Yarders of the Intentional Parent Academy**  
+*This is a free donation managed by the community.*

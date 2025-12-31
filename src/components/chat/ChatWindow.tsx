@@ -385,7 +385,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
             Select a group to start chatting
           </p>
           <p className="text-sm text-muted-foreground">
-            Welcome to Abuja Yarders MeetingPoint! Choose a group from the left to begin.
+            Welcome to Abuja Yarder Meeting Point! Choose a group from the left to begin.
           </p>
         </div>
       </Card>
