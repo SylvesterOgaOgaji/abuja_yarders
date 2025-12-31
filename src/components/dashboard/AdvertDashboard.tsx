@@ -23,7 +23,8 @@ interface BirthdayProfile {
     id: string;
     full_name: string;
     avatar_url: string | null;
-    date_of_birth: string;
+    birth_day: number | null;
+    birth_month: number | null;
 }
 
 export const AdvertDashboard = () => {
@@ -38,7 +39,7 @@ export const AdvertDashboard = () => {
                 const [contentResult, excoResult, profilesResult] = await Promise.all([
                     supabase.from("dashboard_content").select("key, value"),
                     supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
-                    supabase.from("profiles").select("id, full_name, avatar_url, date_of_birth").not('date_of_birth', 'is', null)
+                    supabase.from("profiles").select("id, full_name, avatar_url, birth_day, birth_month").not('birth_day', 'is', null)
                 ]);
 
                 if (contentResult.data) {
@@ -55,13 +56,11 @@ export const AdvertDashboard = () => {
 
                 if (profilesResult.data) {
                     const today = new Date();
-                    const currentMonth = today.getMonth(); // 0-indexed
+                    const currentMonth = today.getMonth() + 1; // 1-indexed to match DB
                     const currentDay = today.getDate();
 
                     const todaysBirthdays = profilesResult.data.filter(p => {
-                        if (!p.date_of_birth) return false;
-                        const dob = new Date(p.date_of_birth);
-                        return dob.getMonth() === currentMonth && dob.getDate() === currentDay;
+                        return p.birth_month === currentMonth && p.birth_day === currentDay;
                     });
                     setBirthdays(todaysBirthdays as BirthdayProfile[]);
                 }

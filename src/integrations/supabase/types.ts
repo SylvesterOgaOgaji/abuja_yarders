@@ -364,9 +364,10 @@ export type Database = {
         Row: {
           area_council: string | null
           avatar_url: string | null
+          birth_day: number | null
+          birth_month: number | null
           created_at: string
           currency: string
-          date_of_birth: string | null
           full_name: string
           id: string
           is_banned: boolean
@@ -379,9 +380,10 @@ export type Database = {
         Insert: {
           area_council?: string | null
           avatar_url?: string | null
+          birth_day?: number | null
+          birth_month?: number | null
           created_at?: string
           currency?: string
-          date_of_birth?: string | null
           full_name: string
           id: string
           is_banned?: boolean | null
@@ -394,9 +396,10 @@ export type Database = {
         Update: {
           area_council?: string | null
           avatar_url?: string | null
+          birth_day?: number | null
+          birth_month?: number | null
           created_at?: string
           currency?: string
-          date_of_birth?: string | null
           full_name?: string
           id?: string
           is_banned?: boolean | null

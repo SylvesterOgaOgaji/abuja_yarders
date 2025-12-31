@@ -53,6 +53,8 @@ interface ProfileData {
   volunteering_capacity: string | null;
   confirmation_agreement: boolean | null;
   email: string | null;
+  birth_day: number | null;
+  birth_month: number | null;
 }
 
 export default function Profile() {
@@ -73,6 +75,25 @@ export default function Profile() {
   const [commitmentFollowup, setCommitmentFollowup] = useState<number | undefined>(undefined);
   const [commitmentFinancial, setCommitmentFinancial] = useState<number | undefined>(undefined);
   const [volunteeringCapacity, setVolunteeringCapacity] = useState("");
+  const [birthDay, setBirthDay] = useState<string>("");
+  const [birthMonth, setBirthMonth] = useState<string>("");
+
+  const MONTHS = [
+    { value: "01", label: "January" },
+    { value: "02", label: "February" },
+    { value: "03", label: "March" },
+    { value: "04", label: "April" },
+    { value: "05", label: "May" },
+    { value: "06", label: "June" },
+    { value: "07", label: "July" },
+    { value: "08", label: "August" },
+    { value: "09", label: "September" },
+    { value: "10", label: "October" },
+    { value: "11", label: "November" },
+    { value: "12", label: "December" },
+  ];
+
+  const DAYS = Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'));
 
   const { isAdmin, isSubAdmin, isSeller, loading: rolesLoading } = useUserRole(userId);
 
@@ -115,7 +136,7 @@ export default function Profile() {
 
       const { data: profileData, error } = await supabase
         .from("profiles")
-        .select("full_name, phone_number, years_in_yard, area_council, town, created_at, email, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement")
+        .select("full_name, phone_number, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement, birth_day, birth_month")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -126,7 +147,10 @@ export default function Profile() {
       }
 
       if (profileData) {
-        const typedProfile = profileData as ProfileData;
+        const typedProfile = {
+          ...profileData,
+          email: session.user.email || null
+        } as ProfileData;
         setProfile(typedProfile);
         setFullName(typedProfile.full_name || "");
         setPhoneNumber(typedProfile.phone_number || "");
@@ -136,6 +160,11 @@ export default function Profile() {
         setCommitmentFollowup(typedProfile.commitment_followup_scale ?? undefined);
         setCommitmentFinancial(typedProfile.commitment_financial_scale ?? undefined);
         setVolunteeringCapacity(typedProfile.volunteering_capacity || "");
+
+        if (typedProfile.birth_day && typedProfile.birth_month) {
+          setBirthDay(typedProfile.birth_day.toString().padStart(2, '0'));
+          setBirthMonth(typedProfile.birth_month.toString().padStart(2, '0'));
+        }
       }
     } catch (error) {
       console.error("Auth check error:", error);
@@ -155,6 +184,9 @@ export default function Profile() {
 
     const selectedCouncil = AREA_COUNCILS.find(c => c.id === areaCouncil);
 
+    const bDay = birthDay ? parseInt(birthDay) : null;
+    const bMonth = birthMonth ? parseInt(birthMonth) : null;
+
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -166,6 +198,8 @@ export default function Profile() {
         commitment_followup_scale: commitmentFollowup,
         commitment_financial_scale: commitmentFinancial,
         volunteering_capacity: volunteeringCapacity || null,
+        birth_day: bDay,
+        birth_month: bMonth
       })
       .eq("id", userId);
 
@@ -260,6 +294,33 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
+              <Label className="text-primary-foreground">Date of Birth (Day & Month)</Label>
+              <div className="flex gap-4">
+                <Select value={birthDay} onValueChange={setBirthDay}>
+                  <SelectTrigger className="bg-background w-24">
+                    <SelectValue placeholder="Day" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DAYS.map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={birthMonth} onValueChange={setBirthMonth}>
+                  <SelectTrigger className="bg-background flex-1">
+                    <SelectValue placeholder="Month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="phoneNumber" className="text-primary-foreground flex items-center gap-1">
                 <Phone className="h-3 w-3" />
                 Phone Number
@@ -272,6 +333,7 @@ export default function Profile() {
                 className="bg-background"
               />
             </div>
+
 
             <div className="space-y-2">
               <Label className="text-primary-foreground">No of Years in the Yard</Label>
@@ -341,8 +403,8 @@ export default function Profile() {
                       key={`followup-${num}`}
                       onClick={() => setCommitmentFollowup(num)}
                       className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center text-sm transition-colors ${commitmentFollowup === num
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground hover:bg-muted"
                         }`}
                     >
                       {num}
@@ -361,8 +423,8 @@ export default function Profile() {
                       key={`financial-${num}`}
                       onClick={() => setCommitmentFinancial(num)}
                       className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center text-sm transition-colors ${commitmentFinancial === num
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-foreground hover:bg-muted"
                         }`}
                     >
                       {num}
