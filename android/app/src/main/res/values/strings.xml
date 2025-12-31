@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Abuja Yarders</string>
+    <string name="title_activity_main">Abuja Yarders</string>
+    <string name="package_name">com.abujayarders.app</string>
+    <string name="custom_url_scheme">com.abujayarders.app</string>
+</resources>
