@@ -214,8 +214,8 @@ export default function DashboardCMS() {
                     <TabsContent value="content" className="space-y-4 mt-4">
                         <Card>
                             <CardHeader>
-                                <CardTitle>Dashboard Texts</CardTitle>
-                                <CardDescription>Manage welcome messages, resource links, and announcements.</CardDescription>
+                                <CardTitle>Dashboard Texts & Links</CardTitle>
+                                <CardDescription>Manage welcome messages, resource links, organization info, and announcements.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 {contentItems.map((item) => (
@@ -224,12 +224,12 @@ export default function DashboardCMS() {
                                             <Label htmlFor={item.key} className="text-base font-semibold capitalize">
                                                 {item.key.replace(/_/g, " ")}
                                             </Label>
-                                            <span className="text-xs text-muted-foreground">{item.description}</span>
+                                            <span className="text-xs text-muted-foreground max-w-[50%] text-right">{item.description}</span>
                                         </div>
 
                                         <div className="flex gap-2 items-start">
                                             {/* Logic to determine input type based on key or content */}
-                                            {item.key.includes("text") || item.key.includes("desc") || item.key.includes("bio") ? (
+                                            {item.key.includes("text") || item.key.includes("desc") || item.key.includes("bio") || item.key.includes("goals") ? (
                                                 <Textarea
                                                     id={item.key}
                                                     value={item.value || ""}
@@ -237,7 +237,7 @@ export default function DashboardCMS() {
                                                         const newVal = e.target.value;
                                                         setContentItems(prev => prev.map(p => p.key === item.key ? { ...p, value: newVal } : p));
                                                     }}
-                                                    className="flex-1"
+                                                    className="flex-1 min-h-[100px]"
                                                 />
                                             ) : (
                                                 <div className="flex-1 flex gap-2">
@@ -250,12 +250,13 @@ export default function DashboardCMS() {
                                                         }}
                                                     />
                                                     {/* Add file upload option for PDF links or images if needed */}
-                                                    {(item.key === '2026_policy_pdf' || item.key.includes('image')) && (
+                                                    {(item.key === 'policy_document_url' || item.key.includes('image')) && (
                                                         <div className="flex-shrink-0">
                                                             <input
                                                                 type="file"
                                                                 id={`upload-${item.key}`}
                                                                 className="hidden"
+                                                                accept={item.key.includes('image') ? "image/*" : ".pdf,.doc,.docx"}
                                                                 onChange={(e) => handleFileUpload(e, item.key)}
                                                             />
                                                             <Button variant="outline" size="icon" onClick={() => document.getElementById(`upload-${item.key}`)?.click()}>

@@ -19,17 +19,26 @@ interface ExcoMember {
     bio: string | null;
 }
 
+interface BirthdayProfile {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+    date_of_birth: string;
+}
+
 export const AdvertDashboard = () => {
     const [content, setContent] = useState<DashboardContent>({});
     const [exco, setExco] = useState<ExcoMember[]>([]);
+    const [birthdays, setBirthdays] = useState<BirthdayProfile[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [contentResult, excoResult] = await Promise.all([
+                const [contentResult, excoResult, profilesResult] = await Promise.all([
                     supabase.from("dashboard_content").select("key, value"),
-                    supabase.from("exco_members").select("*").order("display_order", { ascending: true })
+                    supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
+                    supabase.from("profiles").select("id, full_name, avatar_url, date_of_birth").not('date_of_birth', 'is', null)
                 ]);
 
                 if (contentResult.data) {
@@ -43,6 +52,20 @@ export const AdvertDashboard = () => {
                 if (excoResult.data) {
                     setExco(excoResult.data);
                 }
+
+                if (profilesResult.data) {
+                    const today = new Date();
+                    const currentMonth = today.getMonth(); // 0-indexed
+                    const currentDay = today.getDate();
+
+                    const todaysBirthdays = profilesResult.data.filter(p => {
+                        if (!p.date_of_birth) return false;
+                        const dob = new Date(p.date_of_birth);
+                        return dob.getMonth() === currentMonth && dob.getDate() === currentDay;
+                    });
+                    setBirthdays(todaysBirthdays as BirthdayProfile[]);
+                }
+
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
             } finally {
@@ -52,6 +75,12 @@ export const AdvertDashboard = () => {
 
         fetchData();
     }, []);
+
+    const openLink = (url?: string) => {
+        if (url && url !== '#') {
+            window.open(url, '_blank');
+        }
+    };
 
     return (
         <div className="h-full bg-gradient-to-br from-background to-secondary/20 overflow-hidden flex flex-col">
@@ -79,7 +108,7 @@ export const AdvertDashboard = () => {
                                     {content["featured_badge"] || "Featured Event"}
                                 </Badge>
                                 <CardTitle className="text-2xl md:text-3xl mt-2">
-                                    {content["featured_title"] || "2026 Inner Circle"}
+                                    {content["featured_title"] || "2027 Inner Circle"}
                                 </CardTitle>
                                 <CardDescription className="text-primary-foreground/80 text-base">
                                     {content["featured_desc"] || "Join us for a transformative experience. Registration is now open!"}
@@ -90,7 +119,11 @@ export const AdvertDashboard = () => {
                                     A weekend dedicated to strengthening bonds and building lasting legacies.
                                     Don't miss the early bird special.
                                 </p>
-                                <Button variant="secondary" className="gap-2 font-semibold shadow-sm">
+                                <Button
+                                    variant="secondary"
+                                    className="gap-2 font-semibold shadow-sm"
+                                    onClick={() => openLink(content["featured_event_link"])}
+                                >
                                     Register Now <ExternalLink className="w-4 h-4" />
                                 </Button>
                             </CardContent>
@@ -113,7 +146,12 @@ export const AdvertDashboard = () => {
                                 </p>
                             </CardContent>
                             <CardFooter>
-                                <Button variant="outline" size="sm" className="w-full border-amber-200 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-900/50">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full border-amber-200 dark:border-amber-800 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                                    onClick={() => openLink(content["special_notice_link"])}
+                                >
                                     Read More
                                 </Button>
                             </CardFooter>
@@ -134,16 +172,21 @@ export const AdvertDashboard = () => {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="flex flex-wrap gap-3">
-                                {/* Mock Data - replace with real data */}
-                                {["Sarah J.", "Mike T.", "Amara K."].map((name, i) => (
-                                    <div key={i} className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-full text-sm">
-                                        <span className="w-2 h-2 rounded-full bg-pink-500 inline-block animate-bounce" style={{ animationDelay: `${i * 200}ms` }} />
-                                        {name}
-                                    </div>
-                                ))}
-                                <span className="text-xs text-muted-foreground flex items-center p-1">+2 others</span>
-                            </div>
+                            {birthdays.length > 0 ? (
+                                <div className="flex flex-wrap gap-4">
+                                    {birthdays.map((user) => (
+                                        <div key={user.id} className="flex items-center gap-3 bg-secondary/50 pr-4 pl-1 py-1 rounded-full text-sm border hover:bg-secondary transition-colors">
+                                            <Avatar className="h-8 w-8 border-2 border-pink-500">
+                                                <AvatarImage src={user.avatar_url || undefined} />
+                                                <AvatarFallback>{user.full_name[0]}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-medium">{user.full_name}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground italic">No birthdays today. Check back tomorrow!</p>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -156,8 +199,8 @@ export const AdvertDashboard = () => {
                                 </div>
                                 <CardTitle className="text-base">Our Vision</CardTitle>
                             </CardHeader>
-                            <CardContent className="text-sm text-muted-foreground">
-                                To raise a generation of intentional parents who are equipped to build thriving families.
+                            <CardContent className="text-sm text-muted-foreground whitespace-pre-line">
+                                {content["vision_text"] || "To raise a generation of intentional parents who are equipped to build thriving families."}
                             </CardContent>
                         </Card>
 
@@ -168,8 +211,8 @@ export const AdvertDashboard = () => {
                                 </div>
                                 <CardTitle className="text-base">Our Mission</CardTitle>
                             </CardHeader>
-                            <CardContent className="text-sm text-muted-foreground">
-                                Providing resources, mentorship, and community support for parents at every stage.
+                            <CardContent className="text-sm text-muted-foreground whitespace-pre-line">
+                                {content["mission_text"] || "Providing resources, mentorship, and community support for parents at every stage."}
                             </CardContent>
                         </Card>
 
@@ -180,8 +223,8 @@ export const AdvertDashboard = () => {
                                 </div>
                                 <CardTitle className="text-base">Core Goals</CardTitle>
                             </CardHeader>
-                            <CardContent className="text-sm text-muted-foreground">
-                                Education, Empowerment, Community Building, and Sustainable Growth.
+                            <CardContent className="text-sm text-muted-foreground whitespace-pre-line">
+                                {content["goals_text"] || "Education, Empowerment, Community Building, and Sustainable Growth."}
                             </CardContent>
                         </Card>
                     </div>
@@ -200,7 +243,11 @@ export const AdvertDashboard = () => {
                                 </CardDescription>
                             </CardHeader>
                             <CardFooter>
-                                <Button className="w-full gap-2">
+                                <Button
+                                    className="w-full gap-2"
+                                    onClick={() => openLink(content["policy_document_url"])}
+                                    disabled={!content["policy_document_url"]}
+                                >
                                     Download PDF <ExternalLink className="w-4 h-4" />
                                 </Button>
                             </CardFooter>
@@ -215,7 +262,7 @@ export const AdvertDashboard = () => {
                                     Pledge Support
                                 </CardTitle>
                                 <CardDescription>
-                                    Support members in need. You can pledge willingly or respond to a call for help.
+                                    {content["pledge_reason_text"] || "Support members in need. You can pledge willingly or respond to a call for help."}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
