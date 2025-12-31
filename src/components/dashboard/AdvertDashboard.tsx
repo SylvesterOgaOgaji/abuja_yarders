@@ -432,25 +432,25 @@ export const AdvertDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 items-center">
-                        <p className="text-sm text-muted-foreground font-medium">
-                            © {new Date().getFullYear()} All Right Reserved at JV ImpactVR Initiative.
+                    <div className="flex flex-col gap-4 items-center">
+                        <p className="text-sm font-semibold text-foreground">
+                            © 2025 JV ImpactVR Initiative Ltd/Gte. All rights reserved.
                         </p>
 
-                        <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground/80">
-                            <button onClick={() => openLink("/legal/terms")} className="hover:text-primary transition-colors hover:underline">
+                        <div className="flex flex-wrap justify-center gap-6 text-sm font-medium">
+                            <button onClick={() => openLink("/legal/terms")} className="text-foreground hover:text-primary transition-colors hover:underline">
                                 Terms and Conditions
                             </button>
-                            <span>•</span>
-                            <button onClick={() => openLink("/legal/privacy")} className="hover:text-primary transition-colors hover:underline">
+                            <span className="text-muted-foreground">•</span>
+                            <button onClick={() => openLink("/legal/privacy")} className="text-foreground hover:text-primary transition-colors hover:underline">
                                 Privacy Policy
                             </button>
-                            <span>•</span>
-                            <button onClick={() => openLink("/legal/contact")} className="hover:text-primary transition-colors hover:underline">
+                            <span className="text-muted-foreground">•</span>
+                            <button onClick={() => openLink("/legal/contact")} className="text-foreground hover:text-primary transition-colors hover:underline">
                                 Contact Us
                             </button>
-                            <span>•</span>
-                            <button onClick={() => openLink("/legal/delete-account")} className="hover:text-destructive text-destructive/80 transition-colors hover:underline font-semibold">
+                            <span className="text-muted-foreground">•</span>
+                            <button onClick={() => openLink("/legal/delete-account")} className="text-destructive hover:text-destructive/80 transition-colors hover:underline font-bold">
                                 Delete My Account
                             </button>
                         </div>
