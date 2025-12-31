@@ -14,6 +14,9 @@ export const useUserRole = (userId: string | undefined) => {
       return;
     }
 
+    setLoading(true); // Reset loading state when potentially fetching new roles
+
+
     const fetchRoles = async () => {
       const { data } = await supabase
         .from("user_roles")
