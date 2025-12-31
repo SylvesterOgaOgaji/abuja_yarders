@@ -17,10 +17,11 @@ export default defineConfig(({ mode }) => ({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'The International Parent Academy',
-        short_name: 'Parent Academy',
-        description: 'Connect, Learn, and Grow with the Parent Academy',
-        theme_color: '#ffffff',
+        name: 'Abuja Yarders',
+        short_name: 'Abuja Yarders',
+        description: 'Connect, Learn, and Grow with Abuja Yarders',
+        theme_color: '#000000',
+        background_color: '#000000',
         icons: [
           {
             src: 'pwa-192x192.png',

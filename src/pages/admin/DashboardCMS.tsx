@@ -400,11 +400,12 @@ export default function DashboardCMS() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="content">Content & Text</TabsTrigger>
                         <TabsTrigger value="exco">Exco Members</TabsTrigger>
                         <TabsTrigger value="calls">Active Calls</TabsTrigger>
                         <TabsTrigger value="groups">Towns / Groups</TabsTrigger>
+                        <TabsTrigger value="legal">Legal & Policies</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="content" className="space-y-4 mt-4">
@@ -591,6 +592,29 @@ export default function DashboardCMS() {
                                 </Card>
                             ))}
                         </div>
+                    </TabsContent>
+
+                    <TabsContent value="legal" className="space-y-4 mt-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Legal Pages & Policy Content</CardTitle>
+                                <CardDescription>Manage text for Terms, Privacy Policy, and Contact Information.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-8">
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Policy Documents</h3>
+                                    {contentItems.filter(i => i.key.startsWith('legal_')).length > 0 ? (
+                                        contentItems.filter(i => i.key.startsWith('legal_')).map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <p>No legal content keys found. Please run the migration to add them.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     </TabsContent>
                 </Tabs>
             </div>

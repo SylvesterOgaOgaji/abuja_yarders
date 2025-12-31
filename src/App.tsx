@@ -18,6 +18,7 @@ import AdminReports from "@/pages/admin/AdminReports";
 import CommitmentAnalysis from "./pages/admin/CommitmentAnalysis";
 import Commitments from "./pages/Commitments";
 import Profile from "./pages/Profile";
+import LegalPage from "./pages/LegalPage";
 import NotFound from "./pages/NotFound";
 import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import Push Hook
 import AdminUserManagement from "@/pages/admin/AdminUserManagement";
@@ -72,6 +73,7 @@ const App = () => {
             <Route path="/admin/users" element={<AdminUserManagement />} />
             <Route path="/commitments" element={<Commitments />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/legal/:type" element={<LegalPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -394,23 +394,66 @@ export const AdvertDashboard = () => {
 
                 </div>
 
-                {/* Footer */}
-                <div className="py-8 mt-8 border-t border-border/40 flex flex-col items-center justify-center gap-4 text-center">
-                    <p className="text-sm text-muted-foreground font-medium">
-                        All rights reserved at JV Impact Initiative {new Date().getFullYear()}
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground/80">
-                        <button onClick={() => openLink("#terms")} className="hover:text-primary transition-colors hover:underline">
-                            Terms and Conditions
-                        </button>
-                        <span>•</span>
-                        <button onClick={() => openLink("#privacy")} className="hover:text-primary transition-colors hover:underline">
-                            Privacy Policy
-                        </button>
-                        <span>•</span>
-                        <button onClick={() => openLink("#contact")} className="hover:text-primary transition-colors hover:underline">
-                            Contact Us
-                        </button>
+                {/* Developer Information & Footer */}
+                <div className="py-8 mt-8 border-t border-border/40 flex flex-col items-center justify-center gap-6 text-center w-full">
+
+                    {/* Developer Info Card */}
+                    <div className="w-full max-w-2xl mx-auto bg-card/50 border border-primary/20 rounded-lg p-6 text-left shadow-sm">
+                        <div className="flex items-center gap-2 mb-4 text-primary">
+                            <code className="text-xl font-bold">{"</>"}</code>
+                            <h3 className="text-xl font-bold">Developer Information</h3>
+                        </div>
+
+                        <div className="space-y-4 text-sm md:text-base">
+                            <div>
+                                <h4 className="font-bold text-foreground">Deputy Superintendent of Corrections (Rtd) Sylvester Oga Ogaji</h4>
+                                <p className="text-muted-foreground">B.Sc (Hons) Computer Science, DevOps, Software Composer</p>
+                            </div>
+
+                            <div>
+                                <span className="font-semibold text-foreground">Technical Implementation:</span>
+                                <p className="text-muted-foreground">JV ImpactVR Initiative Ltd/Gte</p>
+                            </div>
+
+                            <div className="space-y-1 pt-2 border-t border-dashed border-border/50">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <span className="text-primary">✉</span>
+                                    <a href="mailto:slyokoh@gmail.com" className="hover:text-primary transition-colors">slyokoh@gmail.com</a>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <span className="text-primary">✉</span>
+                                    <a href="mailto:jvimpactvrinitiativeltdgte@gmail.com" className="hover:text-primary transition-colors">jvimpactvrinitiativeltdgte@gmail.com</a>
+                                </div>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <span className="text-primary">📞</span>
+                                    <a href="https://wa.me/2348057961025" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">+234 805 796 1025 (WhatsApp)</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 items-center">
+                        <p className="text-sm text-muted-foreground font-medium">
+                            © {new Date().getFullYear()} All Right Reserved at JV ImpactVR Initiative.
+                        </p>
+
+                        <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground/80">
+                            <button onClick={() => openLink("/legal/terms")} className="hover:text-primary transition-colors hover:underline">
+                                Terms and Conditions
+                            </button>
+                            <span>•</span>
+                            <button onClick={() => openLink("/legal/privacy")} className="hover:text-primary transition-colors hover:underline">
+                                Privacy Policy
+                            </button>
+                            <span>•</span>
+                            <button onClick={() => openLink("/legal/contact")} className="hover:text-primary transition-colors hover:underline">
+                                Contact Us
+                            </button>
+                            <span>•</span>
+                            <button onClick={() => openLink("/legal/delete-account")} className="hover:text-destructive text-destructive/80 transition-colors hover:underline font-semibold">
+                                Delete My Account
+                            </button>
+                        </div>
                     </div>
                 </div>
             </ScrollArea >

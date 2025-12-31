@@ -44,6 +44,23 @@ npm run build
 npx cap sync
 ```
 
+### Step 2.5: Generate App Icons & Splash Screens
+To generate professional app icons and splash screens for both Android and iOS:
+
+1.  **Install the Assets Tool:**
+    ```bash
+    npm install @capacitor/assets --save-dev
+    ```
+2.  **Prepare Source Images:**
+    *   Create a folder named `assets` in the root directory.
+    *   Place your logo as `icon.png` (Recommended 1024x1024).
+    *   Place your splash screen set as `splash.png` (Recommended 2732x2732) or `splash-dark.png` for dark mode.
+3.  **Generate Assets:**
+    ```bash
+    npx capacitor-assets generate
+    ```
+    This will automatically resize and place the icons in the correct Android and iOS folders.
+
 ### Step 3: Open in Native IDE
 **Android:**
 ```bash
