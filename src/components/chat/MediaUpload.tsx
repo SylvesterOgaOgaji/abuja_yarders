@@ -24,7 +24,6 @@ export const MediaUpload = ({
   type,
   disabled,
   remainingQuota,
-  remainingQuota,
   onUploadComplete,
   messageId,
   onMessageSent,
