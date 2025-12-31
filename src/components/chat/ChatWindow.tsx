@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Send, Gavel, BadgeCheck } from "lucide-react";
+import { Send, Gavel, BadgeCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
@@ -32,6 +32,7 @@ interface Message {
   };
   media_uploads: MediaUpload[];
   isSeller?: boolean;
+  is_pending?: boolean;
 }
 
 interface ChatWindowProps {
@@ -47,6 +48,7 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [showCreateBid, setShowCreateBid] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -60,6 +62,15 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUserId(user?.id || null);
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+        setIsAdmin(profile?.role === 'admin');
+      }
     };
     getUser();
   }, []);
@@ -68,7 +79,7 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
     if (!groupId) return;
 
     fetchMessages();
-    
+
     // Trigger bid closing check when opening chat
     supabase.functions.invoke('close-expired-bids').catch(console.error);
 
@@ -83,7 +94,9 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
           filter: `group_id=eq.${groupId}`,
         },
         async (payload) => {
-          // Fetch the new message with its profile and media
+          // If message already exists (optimistic update), ignore or update
+          // We'll rely on deduplication in the state setter
+
           const { data: newMessage } = await supabase
             .from("messages")
             .select(`
@@ -98,7 +111,6 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
             .single();
 
           if (newMessage) {
-            // Fetch profile for the new message
             const { data: profile } = await supabase
               .from("profiles")
               .select("id, full_name")
@@ -110,8 +122,27 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
               profiles: profile
             };
 
-            setMessages(prev => [...prev, messageWithProfile as any]);
+            setMessages(prev => {
+              // Deduplication: if ID exists, update it (remove pending), else add
+              const exists = prev.some(m => m.id === messageWithProfile.id);
+              if (exists) {
+                return prev.map(m => m.id === messageWithProfile.id ? { ...messageWithProfile, is_pending: false } as any : m);
+              }
+              return [...prev, messageWithProfile as any];
+            });
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "messages",
+          filter: `group_id=eq.${groupId}`,
+        },
+        (payload) => {
+          setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
         }
       )
       .on(
@@ -123,11 +154,14 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
           filter: `group_id=eq.${groupId}`,
         },
         async (payload) => {
-          // Update the message that this media belongs to
           const mediaUpload = payload.new as any;
           if (mediaUpload.message_id) {
             setMessages(prev => prev.map(msg => {
               if (msg.id === mediaUpload.message_id) {
+                // Check if media already exists to avoid duplication
+                const existingMedia = msg.media_uploads?.some(m => m.id === mediaUpload.id);
+                if (existingMedia) return msg;
+
                 return {
                   ...msg,
                   media_uploads: [...(msg.media_uploads || []), {
@@ -169,10 +203,9 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
       .eq("group_id", groupId)
       .order("created_at", { ascending: true });
 
-    // Fetch profiles and seller roles separately
     if (data && data.length > 0) {
       const userIds = [...new Set(data.map(m => m.user_id))];
-      
+
       const [profilesResult, rolesResult] = await Promise.all([
         supabase.from("profiles").select("id, full_name").in("id", userIds),
         supabase.from("user_roles").select("user_id, role").in("user_id", userIds).eq("role", "seller")
@@ -180,7 +213,7 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
 
       const profileMap = new Map(profilesResult.data?.map(p => [p.id, p]) || []);
       const sellerSet = new Set(rolesResult.data?.map(r => r.user_id) || []);
-      
+
       const messagesWithProfiles = data.map(msg => ({
         ...msg,
         profiles: profileMap.get(msg.user_id),
@@ -194,26 +227,58 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
   };
 
   const handleSend = async () => {
-    if (!groupId || !newMessage.trim()) return;
+    if (!groupId || !newMessage.trim() || !userId) return;
 
     try {
-      const validation = messageSchema.safeParse({ content: newMessage.trim() });
+      const content = newMessage.trim();
+      const validation = messageSchema.safeParse({ content });
       if (!validation.success) {
         toast.error(validation.error.errors[0].message);
         return;
       }
 
+      // Optimistic Update
+      const tempId = crypto.randomUUID();
+      const optimisticMessage: Message = {
+        id: tempId,
+        content: content,
+        created_at: new Date().toISOString(),
+        user_id: userId,
+        profiles: { full_name: "You" }, // Temporary until real profile loads
+        media_uploads: [],
+        is_pending: true
+      };
+
+      setMessages(prev => [...prev, optimisticMessage]);
+      setNewMessage("");
+
       const { error } = await supabase.from("messages").insert({
+        id: tempId, // Use the generated ID
         group_id: groupId,
         user_id: userId,
-        content: newMessage.trim(),
+        content: content,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Rollback on error
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        throw error;
+      }
 
-      setNewMessage("");
     } catch (error: any) {
       toast.error(error.message || "Failed to send message");
+    }
+  };
+
+  const handleDelete = async (messageId: string) => {
+    try {
+      const { error } = await supabase.from("messages").delete().eq("id", messageId);
+      if (error) throw error;
+      // Optimistic removal (backup if realtime is slow)
+      setMessages(prev => prev.filter(m => m.id !== messageId));
+      toast.success("Message deleted");
+    } catch (error) {
+      toast.error("Failed to delete message");
     }
   };
 
@@ -252,80 +317,98 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
 
         <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex overflow-hidden">
           <div className="flex-1 overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-3 sm:space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-            <div className="space-y-2">
-              <p className="font-medium">No messages yet</p>
-              <p className="text-sm">Start the conversation by sending a message below!</p>
-            </div>
-          </div>
-        ) : (
-          messages.map((message) => {
-            const isOwn = message.user_id === userId;
-            return (
-              <div
-                key={message.id}
-                className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 sm:px-4 py-2 ${
-                    isOwn
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-foreground"
-                  }`}
-                >
-                  {!isOwn && (
-                    <UserProfilePopover 
-                      userId={message.user_id} 
-                      userName={message.profiles?.full_name || "User"}
-                    >
-                      <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
-                        <span className="text-xs font-semibold opacity-80">
-                          {message.profiles?.full_name || "User"}
-                        </span>
-                        {message.isSeller && (
-                          <BadgeCheck className="h-3 w-3 text-blue-500" />
-                        )}
-                      </button>
-                    </UserProfilePopover>
-                  )}
-                  <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                  
-                  {message.media_uploads && message.media_uploads.length > 0 && (
-                    <div className="mt-2 space-y-2">
-                      {message.media_uploads.map((media) => (
-                        <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
-                          {media.media_type === "image" ? (
-                            <img
-                              src={media.file_url}
-                              alt="Uploaded"
-                              className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
-                            />
-                          ) : (
-                            <video
-                              src={media.file_url}
-                              className="rounded-lg max-w-[300px] max-h-[200px]"
-                              controls
-                            />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <p className="text-xs opacity-70 mt-1">
-                    {new Date(message.created_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                  
-                  <MessageReactions messageId={message.id} userId={userId} />
+            {messages.length === 0 ? (
+              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+                <div className="space-y-2">
+                  <p className="font-medium">No messages yet</p>
+                  <p className="text-sm">Start the conversation by sending a message below!</p>
                 </div>
               </div>
-            );
-          })
-        )}
+            ) : (
+              messages.map((message) => {
+                const isOwn = message.user_id === userId;
+                const canDelete = isOwn || isAdmin;
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"} group relative`}
+                  >
+                    <div
+                      className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 sm:px-4 py-2 ${isOwn
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-secondary text-foreground"
+                        } ${message.is_pending ? 'opacity-70' : ''}`}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        {!isOwn && (
+                          <UserProfilePopover
+                            userId={message.user_id}
+                            userName={message.profiles?.full_name || "User"}
+                            currentUserIsAdmin={isAdmin}
+                          >
+                            <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
+                              <span className="text-xs font-semibold opacity-80">
+                                {message.profiles?.full_name || "User"}
+                              </span>
+                              {message.isSeller && (
+                                <BadgeCheck className="h-3 w-3 text-blue-500" />
+                              )}
+                            </button>
+                          </UserProfilePopover>
+                        )}
+
+                        {canDelete && !message.is_pending && (
+                          <button
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
+                            onClick={() => handleDelete(message.id)}
+                            title="Delete message"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+
+                      {message.media_uploads && message.media_uploads.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {message.media_uploads.map((media) => (
+                            <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
+                              {media.media_type === "image" ? (
+                                <img
+                                  src={media.file_url}
+                                  alt="Uploaded"
+                                  className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
+                                />
+                              ) : (
+                                <video
+                                  src={media.file_url}
+                                  className="rounded-lg max-w-[300px] max-h-[200px]"
+                                  controls
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs opacity-70">
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {message.is_pending && <span className="text-[10px] italic">Sending...</span>}
+                      </div>
+
+                      <MessageReactions messageId={message.id} userId={userId} />
+                    </div>
+                  </div>
+                );
+              })
+            )}
             <div ref={messagesEndRef} />
           </div>
 

@@ -3,9 +3,10 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
 };
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -60,7 +61,7 @@ Deno.serve(async (req) => {
       console.log(`Processing bid: ${bid.id}`);
 
       // Sort offers by amount descending to find winner
-      const sortedOffers = bid.bid_offers.sort((a, b) => b.offer_amount - a.offer_amount);
+      const sortedOffers = bid.bid_offers.sort((a: any, b: any) => b.offer_amount - a.offer_amount);
       const winningOffer = sortedOffers[0];
 
       if (winningOffer) {
