@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Send, Gavel, BadgeCheck, Trash2 } from "lucide-react";
+import { Send, Gavel, BadgeCheck, Trash2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
@@ -15,6 +15,7 @@ import { MessageReactions } from "./MessageReactions";
 import { CreateBidDialog } from "./CreateBidDialog";
 import { BiddingPanel } from "./BiddingPanel";
 import { UserProfilePopover } from "./UserProfilePopover";
+import { LinkSafetyDialog } from "./LinkSafetyDialog";
 
 interface MediaUpload {
   id: string;
@@ -51,6 +52,8 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [showCreateBid, setShowCreateBid] = useState(false);
+  const [showLinkSafety, setShowLinkSafety] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const quota = useMediaQuota(userId, groupId);
 
@@ -226,22 +229,15 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
     }
   };
 
-  const handleSend = async () => {
-    if (!groupId || !newMessage.trim() || !userId) return;
+  const processSend = async (contentToSend: string) => {
+    if (!groupId || !contentToSend.trim() || !userId) return;
 
     try {
-      const content = newMessage.trim();
-      const validation = messageSchema.safeParse({ content });
-      if (!validation.success) {
-        toast.error(validation.error.errors[0].message);
-        return;
-      }
-
       // Optimistic Update
       const tempId = crypto.randomUUID();
       const optimisticMessage: Message = {
         id: tempId,
-        content: content,
+        content: contentToSend,
         created_at: new Date().toISOString(),
         user_id: userId,
         profiles: { full_name: "You" }, // Temporary until real profile loads
@@ -256,7 +252,7 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
         id: tempId, // Use the generated ID
         group_id: groupId,
         user_id: userId,
-        content: content,
+        content: contentToSend,
       });
 
       if (error) {
@@ -273,6 +269,33 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
     } catch (error: any) {
       toast.error(error.message || "Failed to send message");
     }
+  };
+
+  const handleSend = async () => {
+    const content = newMessage.trim();
+    if (!content) return;
+
+    const validation = messageSchema.safeParse({ content });
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
+      return;
+    }
+
+    // Check for links
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    if (urlRegex.test(content)) {
+      setPendingMessage(content);
+      setShowLinkSafety(true);
+      return;
+    }
+
+    await processSend(content);
+  };
+
+  const handleConfirmLink = async () => {
+    setShowLinkSafety(false);
+    await processSend(pendingMessage);
+    setPendingMessage("");
   };
 
   const handleDelete = async (messageId: string) => {
@@ -292,6 +315,48 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const renderMessageContent = (content: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    const hasLink = urlRegex.test(content);
+
+    return (
+      <div className="space-y-1">
+        <p className="text-sm whitespace-pre-wrap break-words">
+          {parts.map((part, i) => {
+            if (part.match(urlRegex)) {
+              return (
+                <a
+                  key={i}
+                  href={part}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:underline break-all"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {part}
+                </a>
+              );
+            }
+            return part;
+          })}
+        </p>
+
+        {hasLink && (
+          <div className="flex items-center gap-1 mt-1">
+            <Badge variant="outline" className="text-[10px] py-0 px-2 h-5 text-green-700 border-green-200 bg-green-50 gap-1">
+              <ShieldCheck className="w-3 h-3" />
+              Verified Link
+            </Badge>
+            <span className="text-[10px] text-muted-foreground italic">
+              (Confimed by sender)
+            </span>
+          </div>
+        )}
+      </div>
+    );
   };
 
   if (!groupId) {
@@ -374,7 +439,7 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
                         )}
                       </div>
 
-                      <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+                      {renderMessageContent(message.content)}
 
                       {message.media_uploads && message.media_uploads.length > 0 && (
                         <div className="mt-2 space-y-2">
@@ -472,13 +537,20 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
       </Tabs>
 
       {userId && (
-        <CreateBidDialog
-          groupId={groupId}
-          userId={userId}
-          isOpen={showCreateBid}
-          onClose={() => setShowCreateBid(false)}
-          onRequestSeller={onRequestSeller}
-        />
+        <React.Fragment>
+          <CreateBidDialog
+            groupId={groupId}
+            userId={userId}
+            isOpen={showCreateBid}
+            onClose={() => setShowCreateBid(false)}
+            onRequestSeller={onRequestSeller}
+          />
+          <LinkSafetyDialog
+            isOpen={showLinkSafety}
+            onClose={() => setShowLinkSafety(false)}
+            onConfirm={handleConfirmLink}
+          />
+        </React.Fragment>
       )}
 
       {lightboxMedia && (
