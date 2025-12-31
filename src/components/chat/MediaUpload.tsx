@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Image as ImageIcon, Video, Loader2 } from "lucide-react";
+import { Image as ImageIcon, Video, Loader2, Camera as CameraIcon } from "lucide-react";
 import { toast } from "sonner";
 import { VideoTrimmer } from "./VideoTrimmer";
+import { useCamera } from "@/hooks/useCamera";
+import { Capacitor } from "@capacitor/core";
 
 interface MediaUploadProps {
   groupId: string;
@@ -27,6 +29,7 @@ export const MediaUpload = ({
   const [uploading, setUploading] = useState(false);
   const [videoToTrim, setVideoToTrim] = useState<File | null>(null);
   const [showTrimmer, setShowTrimmer] = useState(false);
+  const { takePhoto, isNative } = useCamera();
 
   const validateVideo = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -53,12 +56,12 @@ export const MediaUpload = ({
     });
   };
 
-  const uploadFile = async (file: File) => {
+  const uploadFile = async (file: File | Blob) => {
     setUploading(true);
 
     try {
       // Upload to storage first
-      const fileExt = file.name.split(".").pop();
+      const fileExt = file instanceof File ? file.name.split(".").pop() : (type === 'image' ? 'jpg' : 'mp4');
       const fileName = `${userId}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
         .from("media")
@@ -105,6 +108,18 @@ export const MediaUpload = ({
     }
   };
 
+  const handleNativeCamera = async () => {
+    if (type !== 'image') {
+      toast.error("Native video capture not yet supported directly. Please use file picker.");
+      return;
+    }
+
+    const result = await takePhoto();
+    if (result?.blob) {
+      uploadFile(result.blob);
+    }
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -137,7 +152,7 @@ export const MediaUpload = ({
       video.onloadedmetadata = () => {
         window.URL.revokeObjectURL(video.src);
         const duration = video.duration;
-        
+
         if (duration > 60) {
           // Show trimmer dialog
           setVideoToTrim(file);
@@ -167,33 +182,52 @@ export const MediaUpload = ({
 
   return (
     <>
-      <div className="relative">
-        <input
-          type="file"
-          accept={type === "image" ? "image/*" : "video/*"}
-          onChange={handleFileSelect}
-          disabled={disabled || uploading}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-          id={`upload-${type}`}
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-2"
-          disabled={disabled || uploading}
-          asChild
-        >
-          <label htmlFor={`upload-${type}`} className="cursor-pointer">
-            {uploading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : type === "image" ? (
-              <ImageIcon className="h-4 w-4" />
-            ) : (
-              <Video className="h-4 w-4" />
-            )}
-            {type === "image" ? "Image" : "Video"} ({remainingQuota}/{type === "image" ? "2" : "1"} left)
-          </label>
-        </Button>
+      <div className="relative flex gap-2">
+        <div className="relative">
+          <input
+            type="file"
+            accept={type === "image" ? "image/*" : "video/*"}
+            onChange={handleFileSelect}
+            disabled={disabled || uploading}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+            id={`upload-${type}`}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            disabled={disabled || uploading}
+            asChild
+          >
+            <label htmlFor={`upload-${type}`} className="cursor-pointer">
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : type === "image" ? (
+                <ImageIcon className="h-4 w-4" />
+              ) : (
+                <Video className="h-4 w-4" />
+              )}
+              {type === "image" ? "Image" : "Video"}
+            </label>
+          </Button>
+        </div>
+
+        {isNative && type === 'image' && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            disabled={disabled || uploading}
+            onClick={handleNativeCamera}
+          >
+            <CameraIcon className="h-4 w-4" />
+            Capture
+          </Button>
+        )}
+
+        <span className="text-xs text-muted-foreground self-center">
+          ({remainingQuota}/{type === "image" ? "2" : "1"} left)
+        </span>
       </div>
 
       {videoToTrim && (
