@@ -67,7 +67,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
     quota.refetch();
   };
 
-  const { isAdminOrSubAdmin } = useUserRole(userId || undefined);
+  const { isAdminOrSubAdmin, isAdmin, isSubAdmin } = useUserRole(userId || undefined);
   // Alias for backward compatibility in this file (or use directly)
   const canModerate = isAdminOrSubAdmin;
 
@@ -454,6 +454,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                         <UserProfilePopover
                           userId={message.user_id}
                           userName={message.profiles?.full_name || "User"}
+                          currentUserRole={isAdmin ? 'admin' : isSubAdmin ? 'sub_admin' : undefined}
                           currentUserIsAdmin={canModerate}
                         >
                           <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
@@ -474,6 +475,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                             <UserProfilePopover
                               userId={message.user_id}
                               userName={message.profiles?.full_name || "User"}
+                              currentUserRole={isAdmin ? 'admin' : isSubAdmin ? 'sub_admin' : undefined}
                               currentUserIsAdmin={canModerate}
                             >
                               <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">

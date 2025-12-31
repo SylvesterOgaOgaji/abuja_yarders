@@ -11,14 +11,19 @@ import { BadgeCheck, User, Ban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { BanRequestDialog } from "./BanRequestDialog";
+
 interface UserProfilePopoverProps {
   userId: string;
   userName: string;
+  currentUserRole?: "admin" | "sub_admin" | "user" | null;
+  /** @deprecated use currentUserRole */
   currentUserIsAdmin?: boolean;
   children: React.ReactNode;
 }
 
-export const UserProfilePopover = ({ userId, userName, currentUserIsAdmin, children }: UserProfilePopoverProps) => {
+export const UserProfilePopover = ({ userId, userName, currentUserRole, currentUserIsAdmin, children }: UserProfilePopoverProps) => {
+  const [showBanRequest, setShowBanRequest] = useState(false);
   const [isSeller, setIsSeller] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -104,7 +109,7 @@ export const UserProfilePopover = ({ userId, userName, currentUserIsAdmin, child
               </Button>
             )}
 
-            {currentUserIsAdmin && (
+            {(currentUserRole === 'admin' || currentUserIsAdmin === true) && (
               <Button
                 size="sm"
                 variant={isBanned ? "secondary" : "destructive"}
@@ -115,9 +120,28 @@ export const UserProfilePopover = ({ userId, userName, currentUserIsAdmin, child
                 {isBanned ? "Unban User" : "Ban User"}
               </Button>
             )}
+
+            {currentUserRole === 'sub_admin' && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="w-full gap-2"
+                onClick={() => setShowBanRequest(true)}
+              >
+                <Ban className="h-4 w-4" />
+                Request Ban
+              </Button>
+            )}
           </div>
         </div>
       </PopoverContent>
-    </Popover>
+
+      <BanRequestDialog
+        open={showBanRequest}
+        onOpenChange={setShowBanRequest}
+        userId={userId}
+        userName={userName}
+      />
+    </Popover >
   );
 };

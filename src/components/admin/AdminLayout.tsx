@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, FileText, BarChart, LogOut, Heart, Megaphone, Menu } from "lucide-react";
+import { LayoutDashboard, Users, FileText, BarChart, LogOut, Heart, Megaphone, Menu, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -37,6 +37,11 @@ const sidebarItems = [
         title: "System Reports",
         href: "/admin/reports",
         icon: FileText
+    },
+    {
+        title: "Ban Requests",
+        href: "/admin/ban-requests",
+        icon: ShieldAlert
     },
 ];
 

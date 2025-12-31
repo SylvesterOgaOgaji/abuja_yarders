@@ -22,6 +22,7 @@ import LegalPage from "./pages/LegalPage";
 import NotFound from "./pages/NotFound";
 import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import Push Hook
 import AdminUserManagement from "@/pages/admin/AdminUserManagement";
+import AdminBanRequests from "@/pages/admin/AdminBanRequests";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,7 @@ const App = () => {
             <Route path="/admin/commitments" element={<CommitmentAnalysis />} />
             <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/users" element={<AdminUserManagement />} />
+            <Route path="/admin/ban-requests" element={<AdminBanRequests />} />
             <Route path="/commitments" element={<Commitments />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/legal/:type" element={<LegalPage />} />
