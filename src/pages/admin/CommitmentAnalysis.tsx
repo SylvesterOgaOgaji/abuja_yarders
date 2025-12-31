@@ -32,6 +32,7 @@ interface Commitment {
 interface Profile {
     id: string;
     full_name: string | null;
+    avatar_url?: string | null;
 }
 
 export default function CommitmentAnalysis() {
@@ -119,7 +120,7 @@ export default function CommitmentAnalysis() {
         if (search.length < 2) return;
         const { data } = await supabase
             .from("profiles")
-            .select("id, full_name")
+            .select("id, full_name, avatar_url")
             .ilike("full_name", `%${search}%`)
             .limit(5);
         if (data) setAvailableUsers(data);
@@ -413,7 +414,13 @@ export default function CommitmentAnalysis() {
                                                         setAvailableUsers([]);
                                                     }}
                                                 >
-                                                    {u.full_name}
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={u.avatar_url || undefined} />
+                                                            <AvatarFallback>{u.full_name?.[0] || "?"}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span>{u.full_name}</span>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>

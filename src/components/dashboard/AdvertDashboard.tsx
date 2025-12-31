@@ -7,6 +7,7 @@ import { Calendar, Gift, Heart, Megaphone, FileText, Target, Users, BookOpen, Ex
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PledgeDialog } from "./PledgeDialog";
 
 interface DashboardContent {
     [key: string]: string;
@@ -46,16 +47,21 @@ export const AdvertDashboard = () => {
     const [birthdays, setBirthdays] = useState<BirthdayProfile[]>([]);
     const [activeCalls, setActiveCalls] = useState<SupportCall[]>([]);
     const [isCallsOpen, setIsCallsOpen] = useState(false);
+    const [selectedCall, setSelectedCall] = useState<SupportCall | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const { data: { user } } = await supabase.auth.getUser();
+                setUserId(user?.id || null);
+
                 const [contentResult, excoResult, profilesResult, callsResult] = await Promise.all([
                     supabase.from("dashboard_content").select("key, value"),
                     supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
                     supabase.from("profiles").select("id, full_name, avatar_url, birth_day, birth_month").not('birth_day', 'is', null),
-                    supabase.from("support_calls").select("*").eq("is_active", true).order("urgency", { ascending: false /* critical first if sorted strictly? no, string sort might be wrong. maybe created_at */ }).order("created_at", { ascending: false })
+                    supabase.from("support_calls").select("*").eq("is_active", true).order("urgency", { ascending: false }).order("created_at", { ascending: false })
                 ]);
 
                 if (contentResult.data) {
@@ -398,7 +404,7 @@ export const AdvertDashboard = () => {
                                         )}
                                     </CardContent>
                                     <CardFooter className="p-4 pt-0">
-                                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white" onClick={() => window.open(`https://wa.me/?text=I want to support: ${call.title}`, '_blank')}>
+                                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white" onClick={() => setSelectedCall(call)}>
                                             <HandHeart className="w-4 h-4 mr-2" /> Respond / Pledge
                                         </Button>
                                     </CardFooter>
@@ -414,6 +420,14 @@ export const AdvertDashboard = () => {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <PledgeDialog
+                open={!!selectedCall}
+                onOpenChange={(open) => !open && setSelectedCall(null)}
+                call={selectedCall}
+                userId={userId}
+                onSuccess={() => { }}
+            />
         </div>
     );
 };

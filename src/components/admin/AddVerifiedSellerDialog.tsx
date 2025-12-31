@@ -38,30 +38,66 @@ export const AddVerifiedSellerDialog = ({
 
     setSearching(true);
     setFoundUser(null);
+    const term = email.trim();
 
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "search-user-by-email",
-        {
-          body: { email: email.trim() },
+      if (term.includes('@')) {
+        // Email search via Edge Function
+        const { data, error } = await supabase.functions.invoke(
+          "search-user-by-email",
+          {
+            body: { email: term },
+          }
+        );
+
+        if (error) {
+          console.error("Function invoke error:", error);
+          toast.error(error.message || "Failed to search for user");
+          return;
         }
-      );
 
-      if (error) {
-        console.error("Function invoke error:", error);
-        toast.error(error.message || "Failed to search for user");
-        return;
+        if (data?.error) {
+          toast.error(data.error);
+          return;
+        }
+
+        if (data) {
+          setFoundUser(data);
+          toast.success(`Found user: ${data.full_name}`);
+        }
+      } else {
+        // Name search via Profiles
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("id, full_name, role")
+          .ilike("full_name", `%${term}%`)
+          .limit(1)
+          .single();
+
+        if (error) {
+          // If no rows found, .single() returns error code PGRST116
+          if (error.code === 'PGRST116') {
+            toast.error("No user found with that name");
+          } else {
+            console.error("Profile search error:", error);
+            toast.error("Error searching for user");
+          }
+          return;
+        }
+
+        if (data) {
+          // Construct UserProfile object. Note: email not available in profiles public view
+          // But we don't strictly need email to add role, just ID.
+          // We'll mark email as 'Hidden' or similar.
+          setFoundUser({
+            id: data.id,
+            full_name: data.full_name,
+            email: "Email hidden (Name matched)"
+          });
+          toast.success(`Found user: ${data.full_name}`);
+        }
       }
 
-      if (data?.error) {
-        toast.error(data.error);
-        return;
-      }
-
-      if (data) {
-        setFoundUser(data);
-        toast.success(`Found user: ${data.full_name}`);
-      }
     } catch (error: any) {
       console.error("Search error:", error);
       toast.error(error.message || "User not found or error searching");
@@ -113,18 +149,18 @@ export const AddVerifiedSellerDialog = ({
         <DialogHeader>
           <DialogTitle>Add Verified Seller</DialogTitle>
           <DialogDescription>
-            Search for users by email and grant them verified seller status directly.
+            Search for users by email or name and grant them verified seller status directly.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">User Email</Label>
+            <Label htmlFor="search">User Email or Name</Label>
             <div className="flex gap-2">
               <Input
-                id="email"
-                type="email"
-                placeholder="user@example.com"
+                id="search"
+                type="text"
+                placeholder="Name or email address..."
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}

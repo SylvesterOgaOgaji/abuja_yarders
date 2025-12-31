@@ -120,7 +120,7 @@ export const UpgradeToSellerDialog = ({
 
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="photo">Your Photo *</Label>
+            <Label htmlFor="photo">Profile / Business Photo *</Label>
             <div className="flex items-center gap-4">
               {photoPreview ? (
                 <div className="relative w-24 h-24 rounded-lg overflow-hidden border-2 border-primary">
@@ -140,7 +140,8 @@ export const UpgradeToSellerDialog = ({
                   className="cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Upload a clear photo of yourself (max 5MB)
+                  Upload your Personal Photo, Business Logo, or Storefront Image (max 5MB).
+                  This will be displayed on your seller profile.
                 </p>
               </div>
             </div>

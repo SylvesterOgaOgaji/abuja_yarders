@@ -16,6 +16,7 @@ import { CreateBidDialog } from "./CreateBidDialog";
 import { BiddingPanel } from "./BiddingPanel";
 import { UserProfilePopover } from "./UserProfilePopover";
 import { LinkSafetyDialog } from "./LinkSafetyDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface MediaUpload {
   id: string;
@@ -30,6 +31,7 @@ interface Message {
   user_id: string;
   profiles: {
     full_name: string;
+    avatar_url?: string | null;
   };
   media_uploads: MediaUpload[];
   isSeller?: boolean;
@@ -57,6 +59,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
   const [pendingMessage, setPendingMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const quota = useMediaQuota(userId, groupId);
+  const [groupName, setGroupName] = useState("");
 
   const refreshQuota = () => {
     quota.refetch();
@@ -81,6 +84,20 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
 
   useEffect(() => {
     if (!groupId) return;
+
+    // Fetch group details
+    const fetchGroupDetails = async () => {
+      const { data } = await supabase
+        .from("groups")
+        .select("name")
+        .eq("id", groupId)
+        .single();
+
+      if (data) {
+        setGroupName(data.name);
+      }
+    };
+    fetchGroupDetails();
 
     fetchMessages();
 
@@ -117,7 +134,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
           if (newMessage) {
             const { data: profile } = await supabase
               .from("profiles")
-              .select("id, full_name")
+              .select("id, full_name, avatar_url")
               .eq("id", newMessage.user_id)
               .single();
 
@@ -211,7 +228,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
       const userIds = [...new Set(data.map(m => m.user_id))];
 
       const [profilesResult, rolesResult] = await Promise.all([
-        supabase.from("profiles").select("id, full_name").in("id", userIds),
+        supabase.from("profiles").select("id, full_name, avatar_url").in("id", userIds),
         supabase.from("user_roles").select("user_id, role").in("user_id", userIds).eq("role", "seller")
       ]);
 
@@ -377,22 +394,27 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
 
   return (
     <Card className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="border-b p-3 sm:p-4 bg-muted/10 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h2 className="font-semibold text-base sm:text-lg leading-none">{groupName || "Chat"}</h2>
+        </div>
+        {onClose && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onClose}>
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close Chat</span>
+          </Button>
+        )}
+      </div>
+
       <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
-        <div className="flex items-center justify-between px-2 sm:px-4 mt-2 sm:mt-4 flex-shrink-0">
-          <TabsList>
+        <div className="flex items-center justify-between px-2 sm:px-4 mt-2 mb-2 flex-shrink-0">
+          <TabsList className="grid w-full grid-cols-2 max-w-[200px]">
             <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
             <TabsTrigger value="bidding" className="gap-1 sm:gap-2 text-xs sm:text-sm">
               <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
               Bidding
             </TabsTrigger>
           </TabsList>
-
-          {onClose && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onClose}>
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close Chat</span>
-            </Button>
-          )}
         </div>
 
         <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex overflow-hidden">
@@ -412,78 +434,93 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isOwn ? "justify-end" : "justify-start"} group relative`}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"} group relative mb-2`}
                   >
-                    <div
-                      className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 sm:px-4 py-2 ${isOwn
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-foreground"
-                        } ${message.is_pending ? 'opacity-70' : ''}`}
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        {!isOwn && (
-                          <UserProfilePopover
-                            userId={message.user_id}
-                            userName={message.profiles?.full_name || "User"}
-                            currentUserIsAdmin={isAdmin}
-                          >
-                            <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
-                              <span className="text-xs font-semibold opacity-80">
-                                {message.profiles?.full_name || "User"}
-                              </span>
-                              {message.isSeller && (
-                                <BadgeCheck className="h-3 w-3 text-blue-500" />
-                              )}
-                            </button>
-                          </UserProfilePopover>
-                        )}
-
-                        {canDelete && !message.is_pending && (
-                          <button
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
-                            onClick={() => handleDelete(message.id)}
-                            title="Delete message"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        )}
-                      </div>
-
-                      {renderMessageContent(message.content)}
-
-                      {message.media_uploads && message.media_uploads.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {message.media_uploads.map((media) => (
-                            <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
-                              {media.media_type === "image" ? (
-                                <img
-                                  src={media.file_url}
-                                  alt="Uploaded"
-                                  className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
-                                />
-                              ) : (
-                                <video
-                                  src={media.file_url}
-                                  className="rounded-lg max-w-[300px] max-h-[200px]"
-                                  controls
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                    <div className={`flex items-end gap-2 max-w-[85%] sm:max-w-[70%] ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
+                      {!isOwn && (
+                        <UserProfilePopover
+                          userId={message.user_id}
+                          userName={message.profiles?.full_name || "User"}
+                          currentUserIsAdmin={isAdmin}
+                        >
+                          <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
+                            <AvatarImage src={message.profiles?.avatar_url || undefined} />
+                            <AvatarFallback>{message.profiles?.full_name?.[0] || "?"}</AvatarFallback>
+                          </Avatar>
+                        </UserProfilePopover>
                       )}
 
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs opacity-70">
-                          {new Date(message.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                        {message.is_pending && <span className="text-[10px] italic">Sending...</span>}
-                      </div>
+                      <div
+                        className={`rounded-2xl px-3 sm:px-4 py-2 ${isOwn
+                          ? "bg-primary text-primary-foreground rounded-br-none"
+                          : "bg-secondary text-foreground rounded-bl-none"
+                          } ${message.is_pending ? 'opacity-70' : ''}`}
+                      >
+                        <div className="flex justify-between items-start gap-2">
+                          {!isOwn && (
+                            <UserProfilePopover
+                              userId={message.user_id}
+                              userName={message.profiles?.full_name || "User"}
+                              currentUserIsAdmin={isAdmin}
+                            >
+                              <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
+                                <span className="text-xs font-semibold opacity-80">
+                                  {message.profiles?.full_name || "User"}
+                                </span>
+                                {message.isSeller && (
+                                  <BadgeCheck className="h-3 w-3 text-blue-500" />
+                                )}
+                              </button>
+                            </UserProfilePopover>
+                          )}
 
-                      <MessageReactions messageId={message.id} userId={userId} />
+                          {canDelete && !message.is_pending && (
+                            <button
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
+                              onClick={() => handleDelete(message.id)}
+                              title="Delete message"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+
+                        {renderMessageContent(message.content)}
+
+                        {message.media_uploads && message.media_uploads.length > 0 && (
+                          <div className="mt-2 space-y-2">
+                            {message.media_uploads.map((media) => (
+                              <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
+                                {media.media_type === "image" ? (
+                                  <img
+                                    src={media.file_url}
+                                    alt="Uploaded"
+                                    className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
+                                  />
+                                ) : (
+                                  <video
+                                    src={media.file_url}
+                                    className="rounded-lg max-w-[300px] max-h-[200px]"
+                                    controls
+                                  />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-xs opacity-70">
+                            {new Date(message.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                          {message.is_pending && <span className="text-[10px] italic">Sending...</span>}
+                        </div>
+
+                        <MessageReactions messageId={message.id} userId={userId} />
+                      </div>
                     </div>
                   </div>
                 );
