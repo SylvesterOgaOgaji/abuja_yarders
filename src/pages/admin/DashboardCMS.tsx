@@ -27,6 +27,19 @@ interface ExcoMember {
     display_order: number;
 }
 
+interface SupportCall {
+    id: string;
+    title: string;
+    description: string | null;
+    urgency: "low" | "medium" | "high" | "critical";
+    category: "financial" | "medical" | "volunteering" | "other";
+    is_active: boolean;
+    target_amount: number | null;
+    raised_amount: number | null;
+    contact_info: string | null;
+    created_at: string;
+}
+
 export default function DashboardCMS() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("content");
@@ -40,6 +53,16 @@ export default function DashboardCMS() {
     const [editingExco, setEditingExco] = useState<ExcoMember | null>(null);
     const [newMember, setNewMember] = useState<Partial<ExcoMember>>({ display_order: 0 });
 
+    // Active Calls State
+    const [activeCalls, setActiveCalls] = useState<SupportCall[]>([]);
+    const [isCallDialogOpen, setIsCallDialogOpen] = useState(false);
+    const [editingCall, setEditingCall] = useState<SupportCall | null>(null);
+    const [newCall, setNewCall] = useState<Partial<SupportCall>>({
+        urgency: "medium",
+        category: "other",
+        is_active: true
+    });
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -47,16 +70,19 @@ export default function DashboardCMS() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [contentRes, excoRes] = await Promise.all([
+            const [contentRes, excoRes, callsRes] = await Promise.all([
                 supabase.from("dashboard_content").select("*").order("key"),
-                supabase.from("exco_members").select("*").order("display_order", { ascending: true })
+                supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
+                supabase.from("support_calls").select("*").order("created_at", { ascending: false })
             ]);
 
             if (contentRes.error) throw contentRes.error;
             if (excoRes.error) throw excoRes.error;
+            if (callsRes.error) throw callsRes.error;
 
             setContentItems(contentRes.data || []);
             setExcoMembers(excoRes.data || []);
+            setActiveCalls(callsRes.data || []);
         } catch (error) {
             console.error("Error fetching CMS data:", error);
             toast.error("Failed to load CMS data");
@@ -187,6 +213,82 @@ export default function DashboardCMS() {
         }
     };
 
+    const saveCall = async () => {
+        setSaving(true);
+        try {
+            const callToSave = editingCall || newCall;
+            if (!callToSave.title) {
+                toast.error("Title is required");
+                setSaving(false);
+                return;
+            }
+
+            // Get current user for new calls
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (editingCall) {
+                const { error } = await supabase
+                    .from("support_calls")
+                    .update({
+                        title: editingCall.title,
+                        description: editingCall.description,
+                        urgency: editingCall.urgency,
+                        category: editingCall.category,
+                        target_amount: editingCall.target_amount,
+                        raised_amount: editingCall.raised_amount,
+                        contact_info: editingCall.contact_info,
+                        is_active: editingCall.is_active
+                    })
+                    .eq("id", editingCall.id);
+
+                if (error) throw error;
+                toast.success("Active call updated");
+            } else {
+                const { error } = await supabase
+                    .from("support_calls")
+                    .insert([{
+                        title: newCall.title || "",
+                        description: newCall.description,
+                        urgency: newCall.urgency || 'medium',
+                        category: newCall.category || 'other',
+                        target_amount: newCall.target_amount,
+                        contact_info: newCall.contact_info,
+                        created_by: user?.id
+                    }]);
+
+                if (error) throw error;
+                toast.success("Active call created");
+            }
+
+            setIsCallDialogOpen(false);
+            setEditingCall(null);
+            setNewCall({ urgency: "medium", category: "other", is_active: true });
+            fetchData();
+        } catch (error) {
+            console.error("Error saving call:", error);
+            toast.error("Failed to save call");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const toggleCallStatus = async (call: SupportCall) => {
+        try {
+            const { error } = await supabase
+                .from("support_calls")
+                .update({ is_active: !call.is_active })
+                .eq("id", call.id);
+
+            if (error) throw error;
+
+            setActiveCalls(prev => prev.map(c => c.id === call.id ? { ...c, is_active: !c.is_active } : c));
+            toast.success(`Call marked as ${!call.is_active ? 'active' : 'inactive'}`);
+        } catch (error) {
+            console.error("Error updating call status:", error);
+            toast.error("Failed to update status");
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -206,9 +308,10 @@ export default function DashboardCMS() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="content">Content & Text</TabsTrigger>
                         <TabsTrigger value="exco">Exco Members</TabsTrigger>
+                        <TabsTrigger value="calls">Active Calls</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="content" className="space-y-4 mt-4">
@@ -316,6 +419,54 @@ export default function DashboardCMS() {
                             ))}
                         </div>
                     </TabsContent>
+
+                    <TabsContent value="calls" className="space-y-4 mt-4">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-semibold">Support / Active Calls</h2>
+                            <Button onClick={() => { setEditingCall(null); setIsCallDialogOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Call
+                            </Button>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2">
+                            {activeCalls.map((call) => (
+                                <Card key={call.id} className={`relative border-l-4 ${call.is_active ? 'border-l-green-500' : 'border-l-gray-300 opacity-70'}`}>
+                                    <CardHeader className="flex flex-row items-start justify-between gap-4 pb-2">
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <CardTitle className="text-base">{call.title}</CardTitle>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border ${call.urgency === 'critical' ? 'bg-red-100 text-red-600 border-red-200' :
+                                                        call.urgency === 'high' ? 'bg-orange-100 text-orange-600 border-orange-200' :
+                                                            call.urgency === 'medium' ? 'bg-yellow-100 text-yellow-600 border-yellow-200' :
+                                                                'bg-green-100 text-green-600 border-green-200'
+                                                    }`}>
+                                                    {call.urgency}
+                                                </span>
+                                            </div>
+                                            <CardDescription>{call.category} • {new Date(call.created_at).toLocaleDateString()}</CardDescription>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-muted-foreground line-clamp-3 mb-2">{call.description}</p>
+                                        {call.target_amount && (
+                                            <div className="text-xs font-medium">
+                                                Target: {Number(call.target_amount).toLocaleString()}
+                                                {call.raised_amount && ` • Raised: ${Number(call.raised_amount).toLocaleString()}`}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                    <div className="absolute top-2 right-2 flex gap-1">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleCallStatus(call)} title={call.is_active ? "Mark Inactive" : "Mark Active"}>
+                                            {call.is_active ? <X className="h-4 w-4 text-red-500" /> : <Save className="h-4 w-4 text-green-500" />}
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingCall(call); setIsCallDialogOpen(true); }}>
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </TabsContent>
                 </Tabs>
             </div>
 
@@ -384,6 +535,108 @@ export default function DashboardCMS() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsExcoDialogOpen(false)}>Cancel</Button>
                         <Button onClick={saveExcoMember} disabled={saving}>
+                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isCallDialogOpen} onOpenChange={setIsCallDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingCall ? 'Edit Call' : 'Add New Call'}</DialogTitle>
+                        <DialogDescription>
+                            Create or edit a support call / fundraiser.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="call-title">Title</Label>
+                            <Input
+                                id="call-title"
+                                value={editingCall ? editingCall.title : newCall.title || ''}
+                                onChange={(e) => editingCall ? setEditingCall({ ...editingCall, title: e.target.value }) : setNewCall({ ...newCall, title: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="call-desc">Description</Label>
+                            <Textarea
+                                id="call-desc"
+                                value={editingCall ? editingCall.description || '' : newCall.description || ''}
+                                onChange={(e) => editingCall ? setEditingCall({ ...editingCall, description: e.target.value }) : setNewCall({ ...newCall, description: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="call-urgency">Urgency</Label>
+                                <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={editingCall ? editingCall.urgency : newCall.urgency || 'medium'}
+                                    onChange={(e) => {
+                                        const val = e.target.value as any;
+                                        editingCall ? setEditingCall({ ...editingCall, urgency: val }) : setNewCall({ ...newCall, urgency: val });
+                                    }}
+                                >
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                    <option value="critical">Critical</option>
+                                </select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="call-category">Category</Label>
+                                <select
+                                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                    value={editingCall ? editingCall.category : newCall.category || 'other'}
+                                    onChange={(e) => {
+                                        const val = e.target.value as any;
+                                        editingCall ? setEditingCall({ ...editingCall, category: val }) : setNewCall({ ...newCall, category: val });
+                                    }}
+                                >
+                                    <option value="financial">Financial</option>
+                                    <option value="medical">Medical</option>
+                                    <option value="volunteering">Volunteering</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="call-target">Target Amount (Optional)</Label>
+                                <Input
+                                    id="call-target"
+                                    type="number"
+                                    value={editingCall ? editingCall.target_amount || '' : newCall.target_amount || ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value ? parseFloat(e.target.value) : null;
+                                        editingCall ? setEditingCall({ ...editingCall, target_amount: val }) : setNewCall({ ...newCall, target_amount: val });
+                                    }}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="call-contact">Contact Info (Optional)</Label>
+                                <Input
+                                    id="call-contact"
+                                    value={editingCall ? editingCall.contact_info || '' : newCall.contact_info || ''}
+                                    onChange={(e) => editingCall ? setEditingCall({ ...editingCall, contact_info: e.target.value }) : setNewCall({ ...newCall, contact_info: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <input
+                                id="call-active"
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                checked={editingCall ? editingCall.is_active : newCall.is_active ?? true}
+                                onChange={(e) => editingCall ? setEditingCall({ ...editingCall, is_active: e.target.checked }) : setNewCall({ ...newCall, is_active: e.target.checked })}
+                            />
+                            <Label htmlFor="call-active">Is Active?</Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCallDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={saveCall} disabled={saving}>
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save
                         </Button>

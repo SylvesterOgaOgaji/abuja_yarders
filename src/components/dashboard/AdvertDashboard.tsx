@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Gift, Heart, Megaphone, FileText, Target, Users, BookOpen, ExternalLink, HandHeart, User } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DashboardContent {
     [key: string]: string;
@@ -27,19 +28,34 @@ interface BirthdayProfile {
     birth_month: number | null;
 }
 
+interface SupportCall {
+    id: string;
+    title: string;
+    description: string | null;
+    urgency: "low" | "medium" | "high" | "critical";
+    category: "financial" | "medical" | "volunteering" | "other";
+    target_amount: number | null;
+    raised_amount: number | null;
+    contact_info: string | null;
+    created_at: string;
+}
+
 export const AdvertDashboard = () => {
     const [content, setContent] = useState<DashboardContent>({});
     const [exco, setExco] = useState<ExcoMember[]>([]);
     const [birthdays, setBirthdays] = useState<BirthdayProfile[]>([]);
+    const [activeCalls, setActiveCalls] = useState<SupportCall[]>([]);
+    const [isCallsOpen, setIsCallsOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [contentResult, excoResult, profilesResult] = await Promise.all([
+                const [contentResult, excoResult, profilesResult, callsResult] = await Promise.all([
                     supabase.from("dashboard_content").select("key, value"),
                     supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
-                    supabase.from("profiles").select("id, full_name, avatar_url, birth_day, birth_month").not('birth_day', 'is', null)
+                    supabase.from("profiles").select("id, full_name, avatar_url, birth_day, birth_month").not('birth_day', 'is', null),
+                    supabase.from("support_calls").select("*").eq("is_active", true).order("urgency", { ascending: false /* critical first if sorted strictly? no, string sort might be wrong. maybe created_at */ }).order("created_at", { ascending: false })
                 ]);
 
                 if (contentResult.data) {
@@ -63,6 +79,16 @@ export const AdvertDashboard = () => {
                         return p.birth_month === currentMonth && p.birth_day === currentDay;
                     });
                     setBirthdays(todaysBirthdays as BirthdayProfile[]);
+                    setBirthdays(todaysBirthdays as BirthdayProfile[]);
+                }
+
+                if (callsResult.data) {
+                    // Custom sort for urgency if needed, but for now simple fetch
+                    const sortedCalls = (callsResult.data as any[]).sort((a, b) => {
+                        const urgencyOrder = { critical: 3, high: 2, medium: 1, low: 0 };
+                        return (urgencyOrder[b.urgency as keyof typeof urgencyOrder] || 0) - (urgencyOrder[a.urgency as keyof typeof urgencyOrder] || 0);
+                    });
+                    setActiveCalls(sortedCalls as SupportCall[]);
                 }
 
             } catch (error) {
@@ -270,7 +296,7 @@ export const AdvertDashboard = () => {
                                         <HandHeart className="w-5 h-5 text-red-500" />
                                         <span className="text-xs font-semibold">Willing Pledge</span>
                                     </Button>
-                                    <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-orange-200 hover:bg-orange-50 dark:border-orange-900/50 dark:hover:bg-orange-900/20">
+                                    <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-orange-200 hover:bg-orange-50 dark:border-orange-900/50 dark:hover:bg-orange-900/20" onClick={() => setIsCallsOpen(true)}>
                                         <Megaphone className="w-5 h-5 text-orange-500" />
                                         <span className="text-xs font-semibold">View Active Calls</span>
                                     </Button>
@@ -320,6 +346,74 @@ export const AdvertDashboard = () => {
 
                 </div>
             </ScrollArea>
+
+            <Dialog open={isCallsOpen} onOpenChange={setIsCallsOpen}>
+                <DialogContent className="max-w-md md:max-w-lg max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Megaphone className="w-5 h-5 text-orange-500" />
+                            Active Support Calls
+                        </DialogTitle>
+                        <DialogDescription>
+                            Current needs and opportunities to support the community.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-2">
+                        {activeCalls.length > 0 ? (
+                            activeCalls.map(call => (
+                                <Card key={call.id} className="border-l-4 border-l-orange-400 shadow-sm">
+                                    <CardHeader className="p-4 pb-2">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <CardTitle className="text-base">{call.title}</CardTitle>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Badge variant={call.urgency === 'critical' ? 'destructive' : call.urgency === 'high' ? 'default' : 'secondary'} className="text-[10px] uppercase">
+                                                        {call.urgency}
+                                                    </Badge>
+                                                    <Badge variant="outline" className="text-[10px] uppercase text-muted-foreground">
+                                                        {call.category}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="p-4 pt-2 space-y-2">
+                                        <p className="text-sm text-foreground/90 whitespace-pre-wrap">{call.description}</p>
+
+                                        {(call.target_amount || call.contact_info) && (
+                                            <div className="bg-secondary/50 p-2 rounded-md text-xs space-y-1">
+                                                {call.target_amount && (
+                                                    <div className="font-semibold">
+                                                        Goal: {Number(call.target_amount).toLocaleString()}
+                                                        {call.raised_amount && ` • Raised: ${Number(call.raised_amount).toLocaleString()}`}
+                                                    </div>
+                                                )}
+                                                {call.contact_info && (
+                                                    <div className="flex gap-1">
+                                                        <span className="font-semibold">Contact:</span> {call.contact_info}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                    <CardFooter className="p-4 pt-0">
+                                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white" onClick={() => window.open(`https://wa.me/?text=I want to support: ${call.title}`, '_blank')}>
+                                            <HandHeart className="w-4 h-4 mr-2" /> Respond / Pledge
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Heart className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                                <p>No active calls at the moment.</p>
+                                <p className="text-xs">Check back later or make a general pledge.</p>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

@@ -453,6 +453,56 @@ export type Database = {
         }
         Relationships: []
       }
+      support_calls: {
+        Row: {
+          category: "financial" | "medical" | "volunteering" | "other"
+          contact_info: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          raised_amount: number | null
+          target_amount: number | null
+          title: string
+          urgency: "low" | "medium" | "high" | "critical"
+        }
+        Insert: {
+          category?: "financial" | "medical" | "volunteering" | "other"
+          contact_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          raised_amount?: number | null
+          target_amount?: number | null
+          title: string
+          urgency?: "low" | "medium" | "high" | "critical"
+        }
+        Update: {
+          category?: "financial" | "medical" | "volunteering" | "other"
+          contact_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          raised_amount?: number | null
+          target_amount?: number | null
+          title?: string
+          urgency?: "low" | "medium" | "high" | "critical"
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_calls_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      },
       user_roles: {
         Row: {
           created_at: string
