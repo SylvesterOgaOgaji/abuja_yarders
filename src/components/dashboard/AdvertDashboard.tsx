@@ -163,11 +163,23 @@ export const AdvertDashboard = () => {
 
                     {/* Hero / Upcoming Programs */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Card className="md:col-span-2 bg-gradient-to-r from-primary/90 to-primary text-primary-foreground border-none overflow-hidden relative shadow-lg group hover:shadow-xl transition-all">
-                            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <Calendar className="w-32 h-32" />
-                            </div>
-                            <CardHeader>
+                        <Card
+                            className={`md:col-span-2 text-primary-foreground border-none overflow-hidden relative shadow-lg group hover:shadow-xl transition-all ${!content["featured_image_url"] ? "bg-gradient-to-r from-primary/90 to-primary" : "bg-black"}`}
+                        >
+                            {content["featured_image_url"] ? (
+                                <>
+                                    <div
+                                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                                        style={{ backgroundImage: `url(${content["featured_image_url"]})` }}
+                                    />
+                                    <div className="absolute inset-0 bg-black/60" />
+                                </>
+                            ) : (
+                                <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <Calendar className="w-32 h-32" />
+                                </div>
+                            )}
+                            <CardHeader className="relative z-10">
                                 <Badge variant="secondary" className="w-fit bg-white/20 hover:bg-white/30 text-white border-none">
                                     {content["featured_badge"] || "Featured Event"}
                                 </Badge>
@@ -178,7 +190,7 @@ export const AdvertDashboard = () => {
                                     {content["featured_desc"] || "Join us for a transformative experience. Registration is now open!"}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="relative z-10">
                                 <p className="mb-4 text-sm md:text-base opacity-90">
                                     A weekend dedicated to strengthening bonds and building lasting legacies.
                                     Don't miss the early bird special.

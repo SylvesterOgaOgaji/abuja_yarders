@@ -2,9 +2,9 @@
 
 ## App Details
 **App Name:** Abuja Yarders
-**Developer:** JV ImpactVR Initiative Ltd/Gte
+**Developer:** JV ImpactVR Initiative Ltd/Gte | Sylvester Oga Ogaji
 **Category:** Social / Community
-**Content Rating:** 12+ (Teens)
+**Content Rating:** 18+ (Adults)
 
 ---
 
