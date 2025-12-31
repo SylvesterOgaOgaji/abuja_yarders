@@ -167,6 +167,63 @@ export type Database = {
           },
         ]
       }
+      dashboard_content: {
+        Row: {
+          key: string
+          value: string | null
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value?: string | null
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          key?: string
+          value?: string | null
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      exco_members: {
+        Row: {
+          id: string
+          name: string
+          role: string
+          image_url: string | null
+          bio: string | null
+          display_order: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          role: string
+          image_url?: string | null
+          bio?: string | null
+          display_order?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          role?: string
+          image_url?: string | null
+          bio?: string | null
+          display_order?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       groups: {
         Row: {
           created_at: string

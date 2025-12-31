@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Send, Gavel, BadgeCheck, Trash2, ShieldCheck } from "lucide-react";
+import { Send, Gavel, BadgeCheck, Trash2, ShieldCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
@@ -38,14 +38,15 @@ interface Message {
 
 interface ChatWindowProps {
   groupId: string | null;
-  onRequestSeller: () => void;
+  onRequestSeller?: () => void;
+  onClose?: () => void;
 }
 
 const messageSchema = z.object({
   content: z.string().min(1, "Message cannot be empty").max(5000, "Message too long"),
 });
 
-export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
+export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
@@ -377,13 +378,22 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
   return (
     <Card className="flex-1 flex flex-col h-full overflow-hidden">
       <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
-        <TabsList className="mx-2 sm:mx-4 mt-2 sm:mt-4 flex-shrink-0">
-          <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
-          <TabsTrigger value="bidding" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-            <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
-            Bidding
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between px-2 sm:px-4 mt-2 sm:mt-4 flex-shrink-0">
+          <TabsList>
+            <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
+            <TabsTrigger value="bidding" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+              <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
+              Bidding
+            </TabsTrigger>
+          </TabsList>
+
+          {onClose && (
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onClose}>
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close Chat</span>
+            </Button>
+          )}
+        </div>
 
         <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex overflow-hidden">
           <div className="flex-1 overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-3 sm:space-y-4">

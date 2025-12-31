@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Store, UserPlus, User } from "lucide-react";
 import { GroupList } from "@/components/chat/GroupList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
+import { AdvertDashboard } from "@/components/dashboard/AdvertDashboard";
 import { CreateGroupDialog } from "@/components/admin/CreateGroupDialog";
 import { SellerRequestsDialog } from "@/components/admin/SellerRequestsDialog";
 import { AddVerifiedSellerDialog } from "@/components/admin/AddVerifiedSellerDialog";
@@ -24,7 +25,7 @@ const Index = () => {
   const [addSellerDialogOpen, setAddSellerDialogOpen] = useState(false);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  
+
   const { roles, isAdmin, isSubAdmin, isAdminOrSubAdmin, isSeller, loading: rolesLoading } = useUserRole(userId);
 
   useEffect(() => {
@@ -34,7 +35,7 @@ const Index = () => {
   const checkAuth = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (!session) {
         navigate("/auth");
         return;
@@ -104,9 +105,9 @@ const Index = () => {
             </div>
             <div className="flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
               <AllMembersDialog />
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/profile")} 
+              <Button
+                variant="outline"
+                onClick={() => navigate("/profile")}
                 size="sm"
                 className="gap-1 text-xs px-2 sm:px-3"
               >
@@ -114,9 +115,9 @@ const Index = () => {
                 <span className="hidden sm:inline">Profile</span>
               </Button>
               {!isSeller && !isAdminOrSubAdmin && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setUpgradeDialogOpen(true)} 
+                <Button
+                  variant="outline"
+                  onClick={() => setUpgradeDialogOpen(true)}
                   size="sm"
                   className="gap-1 text-xs px-2 sm:px-3"
                 >
@@ -127,17 +128,17 @@ const Index = () => {
               )}
               {isAdminOrSubAdmin && (
                 <>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setSellerRequestsOpen(true)} 
+                  <Button
+                    variant="outline"
+                    onClick={() => setSellerRequestsOpen(true)}
                     size="sm"
                     className="gap-1 text-xs px-2 sm:px-3"
                   >
                     Seller Requests
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setAddSellerDialogOpen(true)} 
+                  <Button
+                    variant="outline"
+                    onClick={() => setAddSellerDialogOpen(true)}
                     size="sm"
                     className="gap-1 text-xs px-2 sm:px-3 hidden sm:flex"
                   >
@@ -149,9 +150,9 @@ const Index = () => {
               {isAdmin && (
                 <CreateSubAdminDialog />
               )}
-              <Button 
-                variant="outline" 
-                onClick={handleLogout} 
+              <Button
+                variant="outline"
+                onClick={handleLogout}
                 size="sm"
                 className="gap-1 text-xs px-2 sm:px-3"
               >
@@ -176,10 +177,15 @@ const Index = () => {
               />
             </div>
             <div className="h-full overflow-hidden">
-              <ChatWindow 
-                groupId={selectedGroupId} 
-                onRequestSeller={() => setUpgradeDialogOpen(true)}
-              />
+              {selectedGroupId ? (
+                <ChatWindow
+                  groupId={selectedGroupId}
+                  onRequestSeller={() => setUpgradeDialogOpen(true)}
+                  onClose={() => setSelectedGroupId(null)}
+                />
+              ) : (
+                <AdvertDashboard />
+              )}
             </div>
           </div>
         </div>
@@ -190,17 +196,17 @@ const Index = () => {
         onOpenChange={setCreateDialogOpen}
         onGroupCreated={handleGroupCreated}
       />
-      
+
       <SellerRequestsDialog
         open={sellerRequestsOpen}
         onOpenChange={setSellerRequestsOpen}
       />
-      
+
       <AddVerifiedSellerDialog
         open={addSellerDialogOpen}
         onOpenChange={setAddSellerDialogOpen}
       />
-      
+
       <UpgradeToSellerDialog
         open={upgradeDialogOpen}
         onOpenChange={setUpgradeDialogOpen}
