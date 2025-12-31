@@ -65,26 +65,32 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdminOrSubAdmin, o
 
   const fetchGroups = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getSession().then(({ data }) => ({ data: { user: data.session?.user } }));
       if (!user) return;
 
-      // Fetch ALL groups (users can see all markets)
-      const { data: groups } = await supabase
-        .from("groups")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [groupsResult, membershipsResult] = await Promise.all([
+        supabase.from("groups").select("*"),
+        supabase.from("group_members").select("group_id").eq("user_id", user.id)
+      ]);
 
-      setGroups(groups || []);
+      const fetchedGroups = groupsResult.data || [];
+      const memberships = membershipsResult.data || [];
+      const memberSet = new Set(memberships.map(m => m.group_id));
 
-      // Fetch user's memberships
-      const { data: memberships } = await supabase
-        .from("group_members")
-        .select("group_id")
-        .eq("user_id", user.id);
+      setMemberGroupIds(memberSet);
 
-      if (memberships) {
-        setMemberGroupIds(new Set(memberships.map(m => m.group_id)));
-      }
+      // Sort: Active (Joined) > Alphabetical
+      const sortedGroups = [...fetchedGroups].sort((a, b) => {
+        const isMemberA = memberSet.has(a.id);
+        const isMemberB = memberSet.has(b.id);
+
+        if (isMemberA && !isMemberB) return -1;
+        if (!isMemberA && isMemberB) return 1;
+
+        return a.name.localeCompare(b.name);
+      });
+
+      setGroups(sortedGroups);
     } catch (error) {
       console.error("Error fetching groups:", error);
     } finally {
