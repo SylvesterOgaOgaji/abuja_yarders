@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     // Production URL (Cloudflare Pages)
-    url: 'https://abujayarders.pages.dev', // Placeholder until actual deployment
+    url: 'https://tipabujayarders.pages.dev',
     cleartext: true
   },
   plugins: {
