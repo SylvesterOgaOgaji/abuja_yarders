@@ -82,7 +82,7 @@ export const CreateGroupDialog = ({ open, onOpenChange, onGroupCreated }: Create
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Sales Team"
+              placeholder="Abuja Town Group"
             />
           </div>
           <div className="space-y-2">
@@ -91,7 +91,7 @@ export const CreateGroupDialog = ({ open, onOpenChange, onGroupCreated }: Create
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Group for sales team coordination"
+              placeholder="Group for town coordination"
             />
           </div>
           <Button onClick={handleCreate} disabled={loading || !name.trim()} className="w-full">
