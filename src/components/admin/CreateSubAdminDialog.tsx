@@ -32,6 +32,9 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
   const [adding, setAdding] = useState(false);
   const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
 
+  const [existingRole, setExistingRole] = useState<"admin" | "sub_admin" | null>(null);
+  const [removing, setRemoving] = useState(false);
+
   const dialogOpen = open ?? isOpen;
   const setDialogOpen = onOpenChange ?? setIsOpen;
 
@@ -40,6 +43,7 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
 
     setSearching(true);
     setFoundUser(null);
+    setExistingRole(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('search-user-by-email', {
@@ -59,7 +63,20 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
 
       if (data) {
         setFoundUser(data);
-        toast.success(`Found user: ${data.full_name}`);
+
+        // Check existing role immediately
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.id)
+          .in("role", ["admin", "sub_admin"]);
+
+        if (roles && roles.length > 0) {
+          setExistingRole(roles[0].role as "admin" | "sub_admin");
+          toast.success(`Found user: ${data.full_name} (${roles[0].role})`);
+        } else {
+          toast.success(`Found user: ${data.full_name}`);
+        }
       }
     } catch (error: any) {
       console.error('Search error:', error);
@@ -75,15 +92,8 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
     setAdding(true);
 
     try {
-      // Check if already a sub_admin or admin
-      const { data: existing } = await supabase
-        .from("user_roles")
-        .select("id, role")
-        .eq("user_id", foundUser.id)
-        .in("role", ["admin", "sub_admin"]);
-
-      if (existing && existing.length > 0) {
-        const existingRole = existing[0].role;
+      // Double check role prevents race conditions, though UI should handle it
+      if (existingRole) {
         toast.error(`User is already ${existingRole === 'admin' ? 'an admin' : 'a sub-admin'}`);
         return;
       }
@@ -99,11 +109,36 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
       toast.success(`${foundUser.full_name} is now a Sub-Admin`);
       setEmail("");
       setFoundUser(null);
+      setExistingRole(null);
       setDialogOpen(false);
     } catch (error: any) {
       toast.error(error.message || "Failed to make user sub-admin");
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleRemoveSubAdmin = async () => {
+    if (!foundUser) return;
+    setRemoving(true);
+    try {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", foundUser.id)
+        .eq("role", "sub_admin");
+
+      if (error) throw error;
+
+      toast.success(`Removed Sub-Admin role from ${foundUser.full_name}`);
+      setEmail("");
+      setFoundUser(null);
+      setExistingRole(null);
+      setDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove sub-admin role");
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -118,10 +153,9 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Sub-Admin</DialogTitle>
+          <DialogTitle>Manage Sub-Admin</DialogTitle>
           <DialogDescription>
-            Search for a user by email and grant them sub-admin privileges.
-            Sub-admins can manage groups and members.
+            Search for a user by email to grant or revoke sub-admin privileges.
           </DialogDescription>
         </DialogHeader>
 
@@ -156,24 +190,57 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
               <div>
                 <p className="font-medium">{foundUser.full_name}</p>
                 <p className="text-sm text-muted-foreground">{foundUser.email}</p>
-              </div>
-              <Button
-                onClick={handleMakeSubAdmin}
-                disabled={adding}
-                className="w-full"
-              >
-                {adding ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Making Sub-Admin...
-                  </>
-                ) : (
-                  <>
-                    <Shield className="h-4 w-4 mr-2" />
-                    Make Sub-Admin
-                  </>
+                {existingRole && (
+                  <div className="mt-1">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${existingRole === 'admin'
+                        ? "bg-primary/10 text-primary"
+                        : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      }`}>
+                      Current Role: {existingRole === 'admin' ? "Admin" : "Sub-Admin"}
+                    </span>
+                  </div>
                 )}
-              </Button>
+              </div>
+
+              {existingRole === 'admin' ? (
+                <Button disabled className="w-full opacity-50 cursor-not-allowed">
+                  Cannot modify Admin
+                </Button>
+              ) : existingRole === 'sub_admin' ? (
+                <Button
+                  onClick={handleRemoveSubAdmin}
+                  disabled={removing}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  {removing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Removing Role...
+                    </>
+                  ) : (
+                    "Remove Sub-Admin Role"
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleMakeSubAdmin}
+                  disabled={adding}
+                  className="w-full"
+                >
+                  {adding ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Making Sub-Admin...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Make Sub-Admin
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           )}
 

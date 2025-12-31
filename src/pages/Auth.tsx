@@ -45,6 +45,7 @@ const authSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
+  const [isResetPassword, setIsResetPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -107,6 +108,17 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      if (isResetPassword) {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/auth/update-password',
+        });
+        if (error) throw error;
+        toast.success("Check your email for the password reset link");
+        setIsResetPassword(false);
+        setLoading(false);
+        return;
+      }
+
       const validation = authSchema.safeParse({
         email,
         password,
@@ -190,235 +202,286 @@ const Auth = () => {
             Leave no Yarder Behind
           </CardDescription>
           <p className="text-center text-sm text-muted-foreground mt-2">
-            {isLogin ? "Sign in to your account" : "Create your account"}
+            {isResetPassword
+              ? "Enter your email to receive a reset link"
+              : isLogin ? "Sign in to your account" : "Create your account"
+            }
           </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
-              <>
-                <div className="space-y-6 border-b pb-6">
-                  {/* Personal Bio Data */}
-                  <h3 className="font-semibold text-lg">Bio Data</h3>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="yearsInYard">
-                      No of years in the Yard <span className="text-destructive">*</span>
-                    </Label>
-                    <Select value={yearsInYard} onValueChange={setYearsInYard}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select years in the Yard" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {YEARS_OPTIONS.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {option}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">
-                      Full Name <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required={!isLogin}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phoneNumber">
-                      Phone Number <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      required={!isLogin}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">
-                Email Address {!isLogin && <span className="text-destructive">*</span>}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            {!isLogin && (
-              <>
+            {isResetPassword ? (
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>
-                    Location (Area Council) <span className="text-destructive">*</span>
-                  </Label>
-                  <RadioGroup value={areaCouncil} onValueChange={setAreaCouncil} className="space-y-2">
-                    {AREA_COUNCILS.map((council) => (
-                      <div key={council.value} className="flex items-center space-x-2">
-                        <RadioGroupItem value={council.value} id={council.value} />
-                        <Label htmlFor={council.value} className="font-normal cursor-pointer">
-                          {council.label}
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-[var(--gradient-primary)] hover:opacity-90 transition-opacity"
+                  disabled={loading}
+                >
+                  {loading ? "Sending..." : "Send Reset Link"}
+                </Button>
+                <div className="text-center text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setIsResetPassword(false)}
+                    className="text-primary hover:underline"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {!isLogin && (
+                  <>
+                    <div className="space-y-6 border-b pb-6">
+                      {/* Personal Bio Data */}
+                      <h3 className="font-semibold text-lg">Bio Data</h3>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="yearsInYard">
+                          No of years in the Yard <span className="text-destructive">*</span>
                         </Label>
+                        <Select value={yearsInYard} onValueChange={setYearsInYard}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select years in the Yard" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {YEARS_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    ))}
-                  </RadioGroup>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="fullName">
+                          Full Name <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="fullName"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          required={!isLogin}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="phoneNumber">
+                          Phone Number <span className="text-destructive">*</span>
+                        </Label>
+                        <Input
+                          id="phoneNumber"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          required={!isLogin}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="email">
+                    Email Address {!isLogin && <span className="text-destructive">*</span>}
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
                 </div>
 
-                {areaCouncil && availableTowns.length > 0 && (
-                  <div className="space-y-2">
-                    <Label>
-                      Town <span className="text-destructive">*</span>
-                    </Label>
-                    <RadioGroup value={town} onValueChange={setTown} className="space-y-2">
-                      {availableTowns.map((townOption) => (
-                        <div key={townOption} className="flex items-center space-x-2">
-                          <RadioGroupItem value={townOption} id={townOption} />
-                          <Label htmlFor={townOption} className="font-normal cursor-pointer">
-                            {townOption}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                {isLogin && !isResetPassword && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => setIsResetPassword(true)}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
                 )}
 
-                <div className="space-y-6 pt-4 border-t">
-                  <h3 className="font-semibold text-lg">Commitment</h3>
+                {!isLogin && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>
+                        Location (Area Council) <span className="text-destructive">*</span>
+                      </Label>
+                      <RadioGroup value={areaCouncil} onValueChange={setAreaCouncil} className="space-y-2">
+                        {AREA_COUNCILS.map((council) => (
+                          <div key={council.value} className="flex items-center space-x-2">
+                            <RadioGroupItem value={council.value} id={council.value} />
+                            <Label htmlFor={council.value} className="font-normal cursor-pointer">
+                              {council.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
 
-                  <div className="space-y-3">
-                    <Label className="leading-relaxed">
-                      How likely when you meet a Yarder, will you remember to exchange contact and do a follow-up as regards to their well-being? <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="flex justify-between text-xs text-muted-foreground px-1">
-                      <span>Not at all likely</span>
-                      <span>Extremely likely</span>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
-                      {LIKERT_SCALE.map((num) => (
-                        <button
-                          key={`followup-${num}`}
-                          type="button"
-                          onClick={() => setCommitmentFollowup(num)}
-                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center text-sm transition-colors ${commitmentFollowup === num
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background hover:bg-muted"
-                            }`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="leading-relaxed">
-                      At what scale will you be available to commit to supporting (financially and participatory) the Abuja Yarder programme in the cause of the 2026 Cohort? <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="flex justify-between text-xs text-muted-foreground px-1">
-                      <span>Not at all likely</span>
-                      <span>Extremely likely</span>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
-                      {LIKERT_SCALE.map((num) => (
-                        <button
-                          key={`financial-${num}`}
-                          type="button"
-                          onClick={() => setCommitmentFinancial(num)}
-                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center text-sm transition-colors ${commitmentFinancial === num
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background hover:bg-muted"
-                            }`}
-                        >
-                          {num}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label className="leading-relaxed">
-                      At what capacity can you volunteer at the hyper-local Yarder communities across your/all Area Councils and towns in the FCT for the success of all Abuja Yarder Programme in the 2026 Cohort of The Intentional Parent Academy? <span className="text-destructive">*</span>
-                    </Label>
-                    <RadioGroup value={volunteeringCapacity} onValueChange={setVolunteeringCapacity} className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="fund_raising" id="vc-fund" />
-                        <Label htmlFor="vc-fund" className="font-normal cursor-pointer">Fund Raising</Label>
+                    {areaCouncil && availableTowns.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>
+                          Town <span className="text-destructive">*</span>
+                        </Label>
+                        <RadioGroup value={town} onValueChange={setTown} className="space-y-2">
+                          {availableTowns.map((townOption) => (
+                            <div key={townOption} className="flex items-center space-x-2">
+                              <RadioGroupItem value={townOption} id={townOption} />
+                              <Label htmlFor={townOption} className="font-normal cursor-pointer">
+                                {townOption}
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="planning" id="vc-planning" />
-                        <Label htmlFor="vc-planning" className="font-normal cursor-pointer">Programme Planning at hyper-local Yarder communities</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="other" id="vc-other" />
-                        <Label htmlFor="vc-other" className="font-normal cursor-pointer">Other</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </div>
+                    )}
 
-                <div className="space-y-6 pt-4 border-t">
-                  <h3 className="font-semibold text-lg">Confirmation</h3>
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="confirmation"
-                      checked={confirmationAgreement}
-                      onCheckedChange={(checked) => setConfirmationAgreement(checked as boolean)}
-                    />
-                    <Label htmlFor="confirmation" className="text-sm font-normal leading-tight cursor-pointer">
-                      I confirm that the information provided is correct and reflects my current place of residence within the FCT. I understand this data will be used solely for Abuja Yarders community coordination and communication. <span className="text-destructive">*</span>
-                    </Label>
-                  </div>
-                </div>
+                    <div className="space-y-6 pt-4 border-t">
+                      <h3 className="font-semibold text-lg">Commitment</h3>
+
+                      <div className="space-y-3">
+                        <Label className="leading-relaxed">
+                          How likely when you meet a Yarder, will you remember to exchange contact and do a follow-up as regards to their well-being? <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="flex justify-between text-xs text-muted-foreground px-1">
+                          <span>Not at all likely</span>
+                          <span>Extremely likely</span>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+                          {LIKERT_SCALE.map((num) => (
+                            <button
+                              key={`followup-${num}`}
+                              type="button"
+                              onClick={() => setCommitmentFollowup(num)}
+                              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center text-sm transition-colors ${commitmentFollowup === num
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background hover:bg-muted"
+                                }`}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="leading-relaxed">
+                          At what scale will you be available to commit to supporting (financially and participatory) the Abuja Yarder programme in the cause of the 2026 Cohort? <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="flex justify-between text-xs text-muted-foreground px-1">
+                          <span>Not at all likely</span>
+                          <span>Extremely likely</span>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+                          {LIKERT_SCALE.map((num) => (
+                            <button
+                              key={`financial-${num}`}
+                              type="button"
+                              onClick={() => setCommitmentFinancial(num)}
+                              className={`w-8 h-8 sm:w-9 sm:h-9 rounded-md border flex items-center justify-center text-sm transition-colors ${commitmentFinancial === num
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background hover:bg-muted"
+                                }`}
+                            >
+                              {num}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="leading-relaxed">
+                          At what capacity can you volunteer at the hyper-local Yarder communities across your/all Area Councils and towns in the FCT for the success of all Abuja Yarder Programme in the 2026 Cohort of The Intentional Parent Academy? <span className="text-destructive">*</span>
+                        </Label>
+                        <RadioGroup value={volunteeringCapacity} onValueChange={setVolunteeringCapacity} className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="fund_raising" id="vc-fund" />
+                            <Label htmlFor="vc-fund" className="font-normal cursor-pointer">Fund Raising</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="planning" id="vc-planning" />
+                            <Label htmlFor="vc-planning" className="font-normal cursor-pointer">Programme Planning at hyper-local Yarder communities</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="other" id="vc-other" />
+                            <Label htmlFor="vc-other" className="font-normal cursor-pointer">Other</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6 pt-4 border-t">
+                      <h3 className="font-semibold text-lg">Confirmation</h3>
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="confirmation"
+                          checked={confirmationAgreement}
+                          onCheckedChange={(checked) => setConfirmationAgreement(checked as boolean)}
+                        />
+                        <Label htmlFor="confirmation" className="text-sm font-normal leading-tight cursor-pointer">
+                          I confirm that the information provided is correct and reflects my current place of residence within the FCT. I understand this data will be used solely for Abuja Yarders community coordination and communication. <span className="text-destructive">*</span>
+                        </Label>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full bg-[var(--gradient-primary)] hover:opacity-90 transition-opacity mt-6"
+                  disabled={loading}
+                >
+                  {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
+                </Button>
               </>
             )}
-
-            <Button
-              type="submit"
-              className="w-full bg-[var(--gradient-primary)] hover:opacity-90 transition-opacity mt-6"
-              disabled={loading}
-            >
-              {loading ? "Loading..." : isLogin ? "Sign In" : "Sign Up"}
-            </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-primary hover:underline"
-            >
-              {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-            </button>
-          </div>
+
+          {!isResetPassword && (
+            <div className="mt-4 text-center text-sm">
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-primary hover:underline"
+              >
+                {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

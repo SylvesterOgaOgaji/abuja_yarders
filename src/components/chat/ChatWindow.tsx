@@ -9,6 +9,7 @@ import { Send, Gavel, BadgeCheck, Trash2, ShieldCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
+import { useUserRole } from "@/hooks/useUserRole";
 import { MediaUpload } from "./MediaUpload";
 import { MediaLightbox } from "./MediaLightbox";
 import { MessageReactions } from "./MessageReactions";
@@ -52,7 +53,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  // const [isAdmin, setIsAdmin] = useState(false); // Replaced by useUserRole
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [showCreateBid, setShowCreateBid] = useState(false);
   const [showLinkSafety, setShowLinkSafety] = useState(false);
@@ -66,19 +67,14 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
     quota.refetch();
   };
 
+  const { isAdminOrSubAdmin } = useUserRole(userId || undefined);
+  // Alias for backward compatibility in this file (or use directly)
+  const canModerate = isAdminOrSubAdmin;
+
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUserId(user?.id || null);
-
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-        setIsAdmin(profile?.role === 'admin');
-      }
     };
     getUser();
   }, []);
@@ -446,7 +442,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
             ) : (
               messages.map((message) => {
                 const isOwn = message.user_id === userId;
-                const canDelete = isOwn || isAdmin;
+                const canDelete = isOwn || canModerate;
 
                 return (
                   <div
@@ -458,7 +454,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                         <UserProfilePopover
                           userId={message.user_id}
                           userName={message.profiles?.full_name || "User"}
-                          currentUserIsAdmin={isAdmin}
+                          currentUserIsAdmin={canModerate}
                         >
                           <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
                             <AvatarImage src={message.profiles?.avatar_url || undefined} />
@@ -478,7 +474,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                             <UserProfilePopover
                               userId={message.user_id}
                               userName={message.profiles?.full_name || "User"}
-                              currentUserIsAdmin={isAdmin}
+                              currentUserIsAdmin={canModerate}
                             >
                               <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
                                 <span className="text-xs font-semibold opacity-80">
