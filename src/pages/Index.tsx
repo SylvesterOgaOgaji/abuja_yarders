@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Store, UserPlus, User, LayoutTemplate, BarChart3 } from "lucide-react";
+import { LogOut, Shield, Store, UserPlus, User, LayoutTemplate, BarChart3, Menu, X } from "lucide-react";
 import { GroupList } from "@/components/chat/GroupList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { AdvertDashboard } from "@/components/dashboard/AdvertDashboard";
@@ -14,20 +14,26 @@ import { UpgradeToSellerDialog } from "@/components/profile/UpgradeToSellerDialo
 import { AllMembersDialog } from "@/components/AllMembersDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedGroupId = searchParams.get("group");
-  
+  const [groupSheetOpen, setGroupSheetOpen] = useState(false);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
+
   const setSelectedGroupId = (id: string | null) => {
     if (id) {
       setSearchParams({ group: id });
     } else {
       setSearchParams({});
     }
+    setGroupSheetOpen(false); // Close sheet on selection
   };
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [sellerRequestsOpen, setSellerRequestsOpen] = useState(false);
@@ -51,6 +57,7 @@ const Index = () => {
       }
 
       setUserId(session.user.id);
+      setUserEmail(session.user.email || "");
     } catch (error) {
       console.error("Auth check error:", error);
       navigate("/auth");
@@ -83,6 +90,31 @@ const Index = () => {
         <div className="w-full px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 max-w-full overflow-hidden">
             <div className="flex items-center gap-2 min-w-0 flex-shrink">
+              {/* Left Hamburger (Groups) - Mobile Only */}
+              <div className="md:hidden">
+                <Sheet open={groupSheetOpen} onOpenChange={setGroupSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/20 -ml-2">
+                      <Menu className="h-6 w-6" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="p-0 w-[300px] border-r-0 bg-background text-foreground">
+                    <div className="h-full overflow-y-auto pt-4">
+                      <GroupList
+                        key={refreshKey}
+                        selectedGroupId={selectedGroupId}
+                        onSelectGroup={setSelectedGroupId}
+                        isAdminOrSubAdmin={isAdminOrSubAdmin}
+                        onCreateGroup={() => {
+                          setCreateDialogOpen(true);
+                          setGroupSheetOpen(false);
+                        }}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
                   Abuja Yarder Meeting Point
@@ -112,7 +144,9 @@ const Index = () => {
                 )}
               </div>
             </div>
-            <div className="flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
+
+            {/* Desktop Buttons */}
+            <div className="hidden md:flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
               <Button
                 variant="outline"
                 onClick={() => navigate("/profile")}
@@ -143,14 +177,83 @@ const Index = () => {
                 <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
+
+            {/* Right Hamburger (Profile) - Mobile Only */}
+            <div className="md:hidden">
+              <Sheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/20 -mr-2">
+                    <User className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[540px]">
+                  <SheetHeader>
+                    <SheetTitle>Menu</SheetTitle>
+                  </SheetHeader>
+                  <div className="flex flex-col gap-4 mt-6">
+                    <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+                      <Avatar>
+                        <AvatarFallback>{userEmail?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                      </Avatar>
+                      <div className="overflow-hidden">
+                        <p className="font-medium truncate">{userEmail}</p>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          {isAdmin && <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">Admin</span>}
+                          {isSubAdmin && <span className="text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">Sub-Admin</span>}
+                          {isSeller && <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded-full">Seller</span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        navigate("/profile");
+                        setProfileSheetOpen(false);
+                      }}
+                      className="justify-start gap-2 h-12"
+                    >
+                      <User className="h-5 w-5" />
+                      Profile
+                    </Button>
+
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          navigate("/admin/cms");
+                          setProfileSheetOpen(false);
+                        }}
+                        className="justify-start gap-2 h-12"
+                      >
+                        <LayoutTemplate className="h-5 w-5" />
+                        Admin Dashboard
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="ghost"
+                      onClick={handleLogout}
+                      className="justify-start gap-2 h-12 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Logout
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1 w-full overflow-hidden">
-        <div className="h-full w-full p-2 sm:p-4 md:p-6">
+        <div className="h-full w-full p-2 sm:p-4 md:p-6 text-foreground">
+          {/* Main Grid: On mobile, only the content column is visible. Groups are in the sheet. */}
           <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-3 sm:gap-4 md:gap-6 h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)] md:h-[calc(100vh-140px)] max-w-full">
-            <div className={`h-full overflow-y-auto overscroll-contain ${selectedGroupId ? 'hidden md:block' : ''}`}>
+
+            {/* Desktop Sidebar (Groups) - Hidden on Mobile */}
+            <div className={`hidden md:block h-full overflow-y-auto overscroll-contain`}>
               <GroupList
                 key={refreshKey}
                 selectedGroupId={selectedGroupId}
@@ -159,7 +262,9 @@ const Index = () => {
                 onCreateGroup={() => setCreateDialogOpen(true)}
               />
             </div>
-            <div className={`h-full overflow-hidden ${selectedGroupId ? 'block' : 'hidden md:block'}`}>
+
+            {/* Main Content Area - Always visible on mobile */}
+            <div className={`h-full overflow-hidden block w-full`}>
               {selectedGroupId ? (
                 <ChatWindow
                   groupId={selectedGroupId}
