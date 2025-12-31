@@ -60,6 +60,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const quota = useMediaQuota(userId, groupId);
   const [groupName, setGroupName] = useState("");
+  const isMainGroup = groupName?.toLowerCase().includes("abuja yarder");
 
   const refreshQuota = () => {
     quota.refetch();
@@ -406,14 +407,22 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
         )}
       </div>
 
+      {!isMainGroup && groupName && (
+        <div className="bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 text-xs px-2 py-1 text-center border-b border-amber-200 font-medium">
+          Strictly for TIP ideology & mandate. No buying/selling allowed here.
+        </div>
+      )}
+
       <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
         <div className="flex items-center justify-between px-2 sm:px-4 mt-2 mb-2 flex-shrink-0">
-          <TabsList className="grid w-full grid-cols-2 max-w-[200px]">
+          <TabsList className={`grid w-full ${isMainGroup ? 'grid-cols-2' : 'grid-cols-1'} max-w-[200px]`}>
             <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>
-            <TabsTrigger value="bidding" className="gap-1 sm:gap-2 text-xs sm:text-sm">
-              <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
-              Bidding
-            </TabsTrigger>
+            {isMainGroup && (
+              <TabsTrigger value="bidding" className="gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
+                Bidding
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -549,16 +558,18 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                     remainingQuota={quota.videos.total - quota.videos.used}
                     onUploadComplete={refreshQuota}
                   />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1 sm:gap-2 text-xs"
-                    onClick={() => setShowCreateBid(true)}
-                  >
-                    <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="hidden sm:inline">Create Bid</span>
-                    <span className="sm:hidden">Bid</span>
-                  </Button>
+                  {isMainGroup && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 sm:gap-2 text-xs"
+                      onClick={() => setShowCreateBid(true)}
+                    >
+                      <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">Create Bid</span>
+                      <span className="sm:hidden">Bid</span>
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -579,7 +590,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
         </TabsContent>
 
         <TabsContent value="bidding" className="flex-1 overflow-y-auto p-4 m-0">
-          {userId && <BiddingPanel groupId={groupId} userId={userId} />}
+          {userId && isMainGroup && <BiddingPanel groupId={groupId} userId={userId} />}
         </TabsContent>
       </Tabs>
 
