@@ -23,10 +23,12 @@ const AdminBanRequests = () => {
     const [requests, setRequests] = useState<BanRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
+    const [authChecked, setAuthChecked] = useState(false);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
             if (data.user) setCurrentUserId(data.user.id);
+            setAuthChecked(true);
         });
     }, []);
 
@@ -34,7 +36,7 @@ const AdminBanRequests = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (!roleLoading && !isAdmin) {
+        if (authChecked && !roleLoading && !isAdmin) {
             navigate("/");
             return;
         }
@@ -42,7 +44,7 @@ const AdminBanRequests = () => {
         if (isAdmin) {
             fetchRequests();
         }
-    }, [isAdmin, roleLoading, navigate]);
+    }, [isAdmin, roleLoading, navigate, authChecked]);
 
     const fetchRequests = async () => {
         try {
