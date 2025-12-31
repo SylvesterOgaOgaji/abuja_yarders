@@ -393,7 +393,27 @@ export const AdvertDashboard = () => {
                     )}
 
                 </div>
-            </ScrollArea>
+
+                {/* Footer */}
+                <div className="py-8 mt-8 border-t border-border/40 flex flex-col items-center justify-center gap-4 text-center">
+                    <p className="text-sm text-muted-foreground font-medium">
+                        All rights reserved at JV Impact Initiative {new Date().getFullYear()}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-4 text-xs text-muted-foreground/80">
+                        <button onClick={() => openLink("#terms")} className="hover:text-primary transition-colors hover:underline">
+                            Terms and Conditions
+                        </button>
+                        <span>•</span>
+                        <button onClick={() => openLink("#privacy")} className="hover:text-primary transition-colors hover:underline">
+                            Privacy Policy
+                        </button>
+                        <span>•</span>
+                        <button onClick={() => openLink("#contact")} className="hover:text-primary transition-colors hover:underline">
+                            Contact Us
+                        </button>
+                    </div>
+                </div>
+            </ScrollArea >
 
             <Dialog open={isCallsOpen} onOpenChange={setIsCallsOpen}>
                 <DialogContent className="max-w-md md:max-w-lg max-h-[80vh] overflow-y-auto">
@@ -470,6 +490,6 @@ export const AdvertDashboard = () => {
                 userId={userId}
                 onSuccess={() => { }}
             />
-        </div>
+        </div >
     );
 };

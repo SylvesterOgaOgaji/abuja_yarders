@@ -104,71 +104,16 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
-              <AllMembersDialog />
-              <Button
-                variant="outline"
-                onClick={() => navigate("/profile")}
-                size="sm"
-                className="gap-1 text-xs px-2 sm:px-3"
-              >
-                <User className="h-3 w-3" />
-                <span className="hidden sm:inline">Profile</span>
-              </Button>
-              {!isSeller && !isAdminOrSubAdmin && (
+              {isAdmin && (
                 <Button
                   variant="outline"
-                  onClick={() => setUpgradeDialogOpen(true)}
+                  onClick={() => navigate("/admin/cms")}
                   size="sm"
                   className="gap-1 text-xs px-2 sm:px-3"
                 >
-                  <Store className="h-3 w-3" />
-                  <span className="hidden sm:inline">Become Seller</span>
-                  <span className="sm:hidden">Seller</span>
+                  <LayoutTemplate className="h-3 w-3" />
+                  <span className="hidden sm:inline">Admin Dashboard</span>
                 </Button>
-              )}
-              {isAdminOrSubAdmin && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => setSellerRequestsOpen(true)}
-                    size="sm"
-                    className="gap-1 text-xs px-2 sm:px-3"
-                  >
-                    Seller Requests
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setAddSellerDialogOpen(true)}
-                    size="sm"
-                    className="gap-1 text-xs px-2 sm:px-3 hidden sm:flex"
-                  >
-                    <UserPlus className="h-3 w-3" />
-                    Add Seller
-                  </Button>
-                </>
-              )}
-              {isAdmin && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/admin/cms")}
-                    size="sm"
-                    className="gap-1 text-xs px-2 sm:px-3"
-                  >
-                    <LayoutTemplate className="h-3 w-3" />
-                    <span className="hidden sm:inline">CMS</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/admin/commitments")}
-                    size="sm"
-                    className="gap-1 text-xs px-2 sm:px-3"
-                  >
-                    <BarChart3 className="h-3 w-3" />
-                    <span className="hidden sm:inline">Analysis</span>
-                  </Button>
-                  <CreateSubAdminDialog />
-                </>
               )}
               <Button
                 variant="outline"
@@ -232,7 +177,7 @@ const Index = () => {
         onOpenChange={setUpgradeDialogOpen}
         userId={userId}
       />
-    </div>
+    </div >
   );
 };
 

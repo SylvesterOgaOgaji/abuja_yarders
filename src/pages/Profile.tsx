@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Save, Loader2, Shield, Store, MapPin, Phone, Calendar } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Shield, Store, MapPin, Phone, Calendar, User, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Textarea } from "@/components/ui/textarea";
 
 const AREA_COUNCILS = [
   { id: "amac", name: "Abuja Municipal Area Council (AMAC)" },
@@ -28,15 +29,6 @@ const AREA_COUNCILS = [
   { id: "abaji", name: "Abaji" },
   { id: "kwali", name: "Kwali" },
 ];
-
-const TOWNS_BY_COUNCIL: Record<string, string[]> = {
-  amac: ["Wuse", "Garki", "Maitama", "Asokoro", "Utako", "Jabi", "Lugbe", "Gwarinpa", "Apo", "Nyanya", "Karu"],
-  gwagwalada: ["Dobi", "Zuba", "Paiko", "Kutunku", "Gwagwalada Town"],
-  kuje: ["Kuje Town", "Rubochi", "Gwagwalada Road Axis", "Chibiri", "Gwargwada"],
-  bwari: ["Bwari Town", "Dutse", "Kubwa", "Byazhin", "Ushafa"],
-  abaji: ["Abaji Town", "Pandagi", "Gurdi", "Rimba"],
-  kwali: ["Kwali Town", "Pai", "Sheda"],
-};
 
 const YEARS_OPTIONS = ["Less than 1 year", "1-2 years", "3-5 years", "5-10 years", "More than 10 years"];
 const LIKERT_SCALE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -56,6 +48,7 @@ interface ProfileData {
   birth_day: number | null;
   birth_month: number | null;
   avatar_url: string | null;
+  bio: string | null;
 }
 
 export default function Profile() {
@@ -69,9 +62,11 @@ export default function Profile() {
   // Form state
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [bio, setBio] = useState("");
   const [yearsInYard, setYearsInYard] = useState("");
   const [areaCouncil, setAreaCouncil] = useState("");
   const [town, setTown] = useState("");
+  const [availableTowns, setAvailableTowns] = useState<string[]>([]);
 
   // New fields state
   const [commitmentFollowup, setCommitmentFollowup] = useState<number | undefined>(undefined);
@@ -104,16 +99,45 @@ export default function Profile() {
   }, []);
 
   useEffect(() => {
-    // Reset town when area council changes (only if it's not from initial load)
-    if (areaCouncil && profile && areaCouncil !== getAreaCouncilId(profile.area_council)) {
-      setTown("");
-    }
+    // Fetch towns when area council changes
+    const fetchTowns = async () => {
+      if (!areaCouncil) {
+        setAvailableTowns([]);
+        return;
+      }
+
+      // We fetch all active groups and filter in JS to be robust against 
+      // whether the DB stores the ID ('kuje') or the Name ('Kuje')
+      const selectedCouncil = AREA_COUNCILS.find(c => c.id === areaCouncil);
+      const councilName = selectedCouncil?.name;
+
+      const { data } = await supabase
+        .from("groups")
+        .select("name, area_council")
+        .eq("is_active", true);
+
+      if (data) {
+        const matchingGroups = data.filter(g =>
+          g.area_council?.toLowerCase() === areaCouncil.toLowerCase() ||
+          (councilName && g.area_council?.toLowerCase() === councilName.toLowerCase())
+        );
+        const towns = matchingGroups.map(g => g.name).sort();
+        // Remove duplicates if any
+        setAvailableTowns([...new Set(towns)]);
+      }
+    };
+
+    fetchTowns();
   }, [areaCouncil]);
 
   const getAreaCouncilId = (name: string | null): string => {
     if (!name) return "";
-    const council = AREA_COUNCILS.find(c => c.name === name);
-    return council?.id || "";
+    // Try to find by name, or if it matches an ID directly
+    const councilByName = AREA_COUNCILS.find(c => c.name === name);
+    if (councilByName) return councilByName.id;
+
+    const councilById = AREA_COUNCILS.find(c => c.id === name?.toLowerCase());
+    return councilById ? councilById.id : "";
   };
 
   const getVolunteeringLabel = (value: string) => {
@@ -138,7 +162,7 @@ export default function Profile() {
 
       const { data: profileData, error } = await supabase
         .from("profiles")
-        .select("full_name, phone_number, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement, birth_day, birth_month, avatar_url")
+        .select("full_name, phone_number, bio, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement, birth_day, birth_month, avatar_url")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -156,6 +180,7 @@ export default function Profile() {
         setProfile(typedProfile);
         setFullName(typedProfile.full_name || "");
         setPhoneNumber(typedProfile.phone_number || "");
+        setBio(typedProfile.bio || "");
         setYearsInYard(typedProfile.years_in_yard || "");
         setAreaCouncil(getAreaCouncilId(typedProfile.area_council));
         setTown(typedProfile.town || "");
@@ -186,12 +211,11 @@ export default function Profile() {
       setSaving(true);
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}-${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const fileName = `${userId}/${Date.now()}.${fileExt}`; // Use folder structure for cleaner bucket
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(fileName, file, { upsert: true }); // Enable upsert
 
       if (uploadError) {
         throw uploadError;
@@ -199,7 +223,7 @@ export default function Profile() {
 
       const { data: { publicUrl } } = supabase.storage
         .from('avatars')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
       setAvatarUrl(publicUrl);
 
@@ -238,6 +262,7 @@ export default function Profile() {
       .update({
         full_name: fullName.trim(),
         phone_number: phoneNumber.trim() || null,
+        bio: bio.trim() || null,
         years_in_yard: yearsInYard || null,
         area_council: selectedCouncil?.name || null,
         town: town || null,
@@ -260,7 +285,7 @@ export default function Profile() {
     setSaving(false);
   };
 
-  const availableTowns = areaCouncil ? TOWNS_BY_COUNCIL[areaCouncil] || [] : [];
+
 
   if (loading || rolesLoading) {
     return (
@@ -394,6 +419,20 @@ export default function Profile() {
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="Enter your phone number"
                 className="bg-background"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bio" className="text-primary-foreground flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                Bio / Description
+              </Label>
+              <Textarea
+                id="bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                placeholder="Tell us a bit about yourself..."
+                className="bg-background min-h-[100px]"
               />
             </div>
 

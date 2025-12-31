@@ -14,9 +14,14 @@ interface AdminLayoutProps {
 
 const sidebarItems = [
     {
-        title: "Dashboard CMS",
+        title: "Admin Dashboard",
         href: "/admin/cms",
         icon: LayoutDashboard
+    },
+    {
+        title: "User Management",
+        href: "/admin/users",
+        icon: Users
     },
     {
         title: "Commitment Analysis",
@@ -33,8 +38,6 @@ const sidebarItems = [
         href: "/admin/reports",
         icon: FileText
     },
-    // Future items
-    // { title: "User Management", href: "/admin/users", icon: Users },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {

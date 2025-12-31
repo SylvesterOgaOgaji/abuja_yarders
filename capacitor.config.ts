@@ -1,11 +1,12 @@
-import type { CapacitorConfig } from '@capacitor/core';
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.3c0d723de7f649d9a604d3cc650ec10a',
-  appName: 'sale4me-connect',
+  appId: 'com.abujayarders.app', // Unique ID for Abuja Yarders
+  appName: 'Abuja Yarders',
   webDir: 'dist',
   server: {
-    url: 'https://3c0d723d-e7f6-49d9-a604-d3cc650ec10a.lovableproject.com?forceHideBadge=true',
+    // Production URL (Cloudflare Pages)
+    url: 'https://abujayarders.pages.dev', // Placeholder until actual deployment
     cleartext: true
   },
   plugins: {
