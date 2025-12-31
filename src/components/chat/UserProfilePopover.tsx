@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { BanRequestDialog } from "./BanRequestDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface UserProfilePopoverProps {
   userId: string;
@@ -28,6 +29,16 @@ export const UserProfilePopover = ({ userId, userName, currentUserRole, currentU
   const [isBanned, setIsBanned] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Fetch target user's role to prevent banning admins/sub-admins
+  const { isAdmin: targetIsAdmin, isSubAdmin: targetIsSubAdmin } = useUserRole(userId);
+
+  // Helper to determine effective role if props not passed (though ChatWindow passes them)
+  const effectiveIsAdmin = currentUserRole === 'admin' || (currentUserIsAdmin === true && !currentUserRole);
+  const effectiveIsSubAdmin = currentUserRole === 'sub_admin';
+
+  const canBanDirectly = effectiveIsAdmin && !targetIsAdmin; // Admin can ban non-admins
+  const canRequestBan = effectiveIsSubAdmin && !targetIsAdmin && !targetIsSubAdmin; // Sub-admin can only request ban for regular users
 
   useEffect(() => {
     const checkUserStatus = async () => {
@@ -109,7 +120,7 @@ export const UserProfilePopover = ({ userId, userName, currentUserRole, currentU
               </Button>
             )}
 
-            {(currentUserRole === 'admin' || currentUserIsAdmin === true) && (
+            {canBanDirectly && (
               <Button
                 size="sm"
                 variant={isBanned ? "secondary" : "destructive"}
@@ -121,7 +132,7 @@ export const UserProfilePopover = ({ userId, userName, currentUserRole, currentU
               </Button>
             )}
 
-            {currentUserRole === 'sub_admin' && (
+            {canRequestBan && (
               <Button
                 size="sm"
                 variant="destructive"
