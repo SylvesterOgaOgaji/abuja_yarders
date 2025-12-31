@@ -11,6 +11,7 @@ import { Loader2, Plus, Trash, Save, Upload, X, Pencil, Check } from "lucide-rea
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import AdminLayout from "@/components/admin/AdminLayout";
 
 interface DashboardContent {
     key: string;
@@ -392,12 +393,9 @@ export default function DashboardCMS() {
     }
 
     return (
-        <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
-            <div className="max-w-4xl mx-auto space-y-6">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
+        <AdminLayout>
+            <div className="max-w-6xl mx-auto space-y-6">
+                <div>
                     <h1 className="text-2xl font-bold">Dashboard CMS</h1>
                 </div>
 
@@ -820,7 +818,7 @@ export default function DashboardCMS() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </AdminLayout>
     );
 }
 

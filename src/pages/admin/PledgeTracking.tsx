@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Download, Filter, Megaphone, HandHeart, CheckCircle, XCircle, Clock, ArrowLeft } from "lucide-react";
+import { Loader2, Search, Download, Filter, Megaphone, HandHeart, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import AdminLayout from "@/components/admin/AdminLayout";
 
 interface Pledge {
     id: string;
@@ -115,11 +116,8 @@ export default function PledgeTracking() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-background">
-            <div className="space-y-6 container mx-auto p-4 md:p-8 max-w-7xl">
-                <Button variant="ghost" className="mb-4" onClick={() => navigate("/")}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-                </Button>
+        <AdminLayout>
+            <div className="space-y-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Pledge Tracking</h1>
@@ -297,6 +295,6 @@ export default function PledgeTracking() {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </AdminLayout>
     );
 }

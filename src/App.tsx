@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import SellerProfile from "./pages/SellerProfile";
 import DashboardCMS from "./pages/admin/DashboardCMS";
 import PledgeTracking from "@/pages/admin/PledgeTracking";
+import AdminReports from "@/pages/admin/AdminReports";
 import CommitmentAnalysis from "./pages/admin/CommitmentAnalysis";
 import Commitments from "./pages/Commitments";
 import Profile from "./pages/Profile";
@@ -66,6 +67,7 @@ const App = () => {
             <Route path="/admin/cms" element={<DashboardCMS />} />
             <Route path="/admin/pledges" element={<PledgeTracking />} />
             <Route path="/admin/commitments" element={<CommitmentAnalysis />} />
+            <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/commitments" element={<Commitments />} />
             <Route path="/profile" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
