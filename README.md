@@ -1,73 +1,101 @@
-# Welcome to your Lovable project
+# Sale4Me Connect
 
-## Project info
+Sale4Me Connect is a robust, full-featured marketplace and community engagement platform designed to foster connection, facilitate commerce, and streamline administration. Built with modern web technologies, it bridges the gap between a vibrant community and a functional marketplace.
 
-**URL**: https://lovable.dev/projects/3c0d723d-e7f6-49d9-a604-d3cc650ec10a
+## Project Overview
 
-## How can I edit this code?
+This application serves two primary purposes:
+1.  **Community Hub**: A space for users to interact via chat groups, receive announcements, and stay updated with leadership ("Exco") activities.
+2.  **Marketplace**: A platform for verified sellers to list services and products, and for users to initiate offers and bids.
 
-There are several ways of editing your application.
+## Keys Features
 
-**Use Lovable**
+### 🔐 Authentication & Security
+-   **Supabase Auth**: Secure email/password and social login.
+-   **Role-Based Access Control (RLS)**: Strict data policies ensuring users only access what they are permitted to.
+-   **Link Safety**: Automated warnings and attestation dialogs for external links shared in chats to prevent scams.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3c0d723d-e7f6-49d9-a604-d3cc650ec10a) and start prompting.
+### 💬 Communication & Community
+-   **Real-time Chat Groups**: Dynamic messaging with support for media uploads.
+-   **Moderation Tools**: Admins can pin messages, delete inappropriate content, and ban users.
+-   **Group Management**: Admins have visibility into all groups with "blur/lock" logic for non-members.
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🛍️ Marketplace & Sellers
+-   **Seller Verification**: Workflow for users to request seller status, now streamlined (removed NIN requirement).
+-   **Product/Service Listings**: Verified sellers can post listings.
+-   **Bids & Offers**: Interactive system for negotiating prices.
 
-**Use your preferred IDE**
+### 📊 Admin Dashboard & CMS
+-   **Dynamic Content Management**: Admins can update dashboard banners, announcements, and images directly from the UI.
+-   **"Meet the Exco"**: Manage leadership profiles and displays.
+-   **Commitment Analysis**: specialized module to track:
+    -   **Financial Pledges**: Track amounts pledged vs. paid with fulfillment rates.
+    -   **Volunteering**: Manage lists of volunteers for events/operations.
+    -   **Planning Capacity**: Track programme planners.
+    -   Public/Private toggle for commitment leaderboards.
+-   **User Management**: Complete control over user roles and bans.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 📱 Mobile Experience
+-   **Capacitor Integration**: Native app capabilities.
+-   **Camera Access**: Integrated `useCamera` hook for media uploads.
+-   **Push Notifications**: System-wide alerts for important updates.
+-   **Offline Persistence**: Caching layer to ensure core data remains available without internet.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Tech Stack
 
-Follow these steps:
+-   **Frontend**: React (Vite), TypeScript
+-   **UI/UX**: Tailwind CSS, Shadcn UI, Lucide React
+-   **Backend**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
+-   **Mobile**: Capacitor (iOS/Android)
+-   **State Management**: TanStack Query (React Query)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## Getting Started
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
+-   Node.js & npm
+-   Supabase Project (for backend connection)
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Installation
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+1.  **Clone the repository**
+    ```sh
+    git clone <YOUR_GIT_URL>
+    cd sale4me-connect
+    ```
 
-**Edit a file directly in GitHub**
+2.  **Install dependencies**
+    ```sh
+    npm install
+    # or
+    yarn install
+    ```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3.  **Environment Setup**
+    Create a `.env` file and add your Supabase credentials:
+    ```env
+    VITE_SUPABASE_URL=your_supabase_url
+    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-**Use GitHub Codespaces**
+4.  **Run Development Server**
+    ```sh
+    npm run dev
+    ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Development & Deployment
 
-## What technologies are used for this project?
+-   **Migrations**: Database changes are managed via Supabase migrations (`/supabase/migrations`).
+-   **Deployment**: Connect the repo to your preferred hosting provider (Vercel, Netlify) or use the Lovable platform for instant deployment.
 
-This project is built with:
+## Future Roadmap
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The detailed roadmap includes:
+-   [ ] **Advanced Analytics**: Deeper insights into user engagement and marketplace transactions.
+-   [ ] **Enhanced Offline Support**: More robust syncing mechanisms for offline actions.
+-   [ ] **Payment Gateway Integration**: Direct processing for pledges and marketplace payments.
+-   [ ] **Expanded Marketplace Features**: Auctions, enhanced categorization, and rating systems.
+-   [ ] **Refined Notification System**: Granular control over notification types and channels.
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/3c0d723d-e7f6-49d9-a604-d3cc650ec10a) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+**Built with ❤️ by the Sale4Me Connect Team**
