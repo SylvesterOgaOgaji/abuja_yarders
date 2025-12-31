@@ -100,13 +100,7 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdminOrSubAdmin, o
     <div className="space-y-2 sm:space-y-3 h-full flex flex-col">
       <div className="flex items-center justify-between flex-shrink-0 px-1">
         <h2 className="text-base sm:text-lg font-semibold text-foreground">Groups</h2>
-        {isAdminOrSubAdmin && (
-          <Button size="sm" onClick={onCreateGroup} className="gap-1 text-xs px-2 sm:px-3">
-            <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">New Group</span>
-            <span className="sm:hidden">New</span>
-          </Button>
-        )}
+
       </div>
       {groups.length === 0 ? (
         <Card className="p-4 sm:p-6 text-center text-muted-foreground">
