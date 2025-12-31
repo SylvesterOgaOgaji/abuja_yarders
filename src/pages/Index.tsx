@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, Store, UserPlus, User, LayoutTemplate, BarChart3 } from "lucide-react";
@@ -19,7 +19,16 @@ const Index = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedGroupId = searchParams.get("group");
+  
+  const setSelectedGroupId = (id: string | null) => {
+    if (id) {
+      setSearchParams({ group: id });
+    } else {
+      setSearchParams({});
+    }
+  };
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [sellerRequestsOpen, setSellerRequestsOpen] = useState(false);
   const [addSellerDialogOpen, setAddSellerDialogOpen] = useState(false);

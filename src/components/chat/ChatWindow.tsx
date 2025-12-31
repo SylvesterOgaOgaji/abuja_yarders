@@ -336,6 +336,14 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
     }
   };
 
+  const handleOptimisticMessage = (message: any) => {
+    setMessages(prev => {
+      // Deduplicate just in case
+      if (prev.some(m => m.id === message.id)) return prev;
+      return [...prev, message];
+    });
+  };
+
   const renderMessageContent = (content: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = content.split(urlRegex);
@@ -549,6 +557,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                     disabled={quota.loading || quota.images.used >= quota.images.total}
                     remainingQuota={quota.images.total - quota.images.used}
                     onUploadComplete={refreshQuota}
+                    onMessageSent={handleOptimisticMessage}
                   />
                   <MediaUpload
                     groupId={groupId}
@@ -557,6 +566,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                     disabled={quota.loading || quota.videos.used >= quota.videos.total}
                     remainingQuota={quota.videos.total - quota.videos.used}
                     onUploadComplete={refreshQuota}
+                    onMessageSent={handleOptimisticMessage}
                   />
                   {isMainGroup && (
                     <Button

@@ -15,6 +15,7 @@ interface MediaUploadProps {
   remainingQuota: number;
   onUploadComplete: () => void;
   messageId?: string;
+  onMessageSent?: (message: any) => void;
 }
 
 export const MediaUpload = ({
@@ -23,8 +24,10 @@ export const MediaUpload = ({
   type,
   disabled,
   remainingQuota,
+  remainingQuota,
   onUploadComplete,
   messageId,
+  onMessageSent,
 }: MediaUploadProps) => {
   const [uploading, setUploading] = useState(false);
   const [videoToTrim, setVideoToTrim] = useState<File | null>(null);
@@ -88,15 +91,27 @@ export const MediaUpload = ({
       if (messageError) throw messageError;
 
       // Immediately insert media_uploads
-      const { error: dbError } = await supabase.from("media_uploads").insert({
+      const { data: mediaData, error: dbError } = await supabase.from("media_uploads").insert({
         user_id: userId,
         group_id: groupId,
         media_type: type,
         file_url: urlData.publicUrl,
         message_id: messageData.id,
-      });
+      }).select().single();
 
       if (dbError) throw dbError;
+
+      const optimisticMessage = {
+        ...messageData,
+        profiles: { full_name: "You" },
+        media_uploads: [{
+          id: mediaData.id,
+          file_url: mediaData.file_url,
+          media_type: mediaData.media_type
+        }]
+      };
+
+      onMessageSent?.(optimisticMessage);
 
       toast.success(`${type === "image" ? "Image" : "Video"} uploaded successfully`);
       onUploadComplete();
