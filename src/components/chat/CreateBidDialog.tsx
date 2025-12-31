@@ -32,7 +32,7 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
 
   const checkSellerRole = async () => {
     if (!isOpen) return;
-    
+
     setCheckingRole(true);
     const { data } = await supabase
       .from("user_roles")
@@ -40,7 +40,7 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
       .eq("user_id", userId)
       .eq("role", "seller")
       .single();
-    
+
     setIsSeller(!!data);
     setCheckingRole(false);
   };
@@ -144,7 +144,7 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
             <p className="text-sm text-muted-foreground">
               Please click "Become Seller" to request seller status and follow the verification process.
             </p>
-            <Button 
+            <Button
               onClick={() => {
                 onClose();
                 onRequestSeller();
@@ -187,7 +187,7 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
             />
           </div>
           <div>
-            <Label htmlFor="startingPrice">Starting Price ($)</Label>
+            <Label htmlFor="startingPrice">Starting Price (₦)</Label>
             <Input
               id="startingPrice"
               type="number"

@@ -53,6 +53,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("chat");
   // const [isAdmin, setIsAdmin] = useState(false); // Replaced by useUserRole
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [showCreateBid, setShowCreateBid] = useState(false);
@@ -78,6 +79,10 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
     };
     getUser();
   }, []);
+
+  // ... (rest of omitted code)
+
+
 
   useEffect(() => {
     if (!groupId) return;
@@ -118,13 +123,13 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
           const { data: newMessage } = await supabase
             .from("messages")
             .select(`
-              *,
-              media_uploads (
-                id,
-                file_url,
-                media_type
-              )
-            `)
+          *,
+          media_uploads (
+          id,
+          file_url,
+          media_type
+          )
+          `)
             .eq("id", payload.new.id)
             .single();
 
@@ -211,13 +216,13 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
     const { data } = await supabase
       .from("messages")
       .select(`
-        *,
-        media_uploads (
+          *,
+          media_uploads (
           id,
           file_url,
           media_type
-        )
-      `)
+          )
+          `)
       .eq("group_id", groupId)
       .order("created_at", { ascending: true });
 
@@ -400,8 +405,18 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
   return (
     <Card className="flex-1 flex flex-col h-full overflow-hidden">
       <div className="border-b p-3 sm:p-4 bg-background/95 backdrop-blur z-50 sticky top-0 flex items-center justify-between flex-shrink-0">
-        <div>
+        <div className="flex items-center gap-4">
           <h2 className="font-semibold text-base sm:text-lg leading-none">{groupName || "Chat"}</h2>
+          {isMainGroup && (
+            <Button
+              variant={activeTab === 'bidding' ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 text-xs sm:text-sm font-medium gap-1 text-primary hover:text-primary/90"
+              onClick={() => setActiveTab('bidding')}
+            >
+              Bidding
+            </Button>
+          )}
         </div>
         {onClose && (
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground -mt-1" onClick={onClose}>
@@ -417,7 +432,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
         </div>
       )}
 
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col h-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col h-full">
         <div className="flex items-center justify-between px-2 sm:px-4 mt-2 mb-2 flex-shrink-0">
           <TabsList className={`grid w-full ${isMainGroup ? 'grid-cols-2' : 'grid-cols-1'} max-w-[200px]`}>
             <TabsTrigger value="chat" className="text-xs sm:text-sm">Chat</TabsTrigger>

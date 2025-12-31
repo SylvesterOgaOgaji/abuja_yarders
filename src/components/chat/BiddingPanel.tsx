@@ -48,7 +48,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
   const navigate = useNavigate();
   const [bids, setBids] = useState<Bid[]>([]);
   const [offerAmounts, setOfferAmounts] = useState<Record<string, string>>({});
-  const [currency, setCurrency] = useState<"USD" | "NGN">("USD");
+  const [currency, setCurrency] = useState<"USD" | "NGN">("NGN");
 
   useEffect(() => {
     const fetchCurrency = async () => {
@@ -57,12 +57,12 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
         .select("currency")
         .eq("id", userId)
         .single();
-      
+
       if (data?.currency) {
         setCurrency(data.currency as "USD" | "NGN");
       }
     };
-    
+
     fetchCurrency();
   }, [userId]);
 
@@ -145,7 +145,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
 
   const handlePlaceBid = async (bidId: string, currentPrice: number) => {
     const offerAmount = parseFloat(offerAmounts[bidId] || "0");
-    
+
     if (offerAmount <= currentPrice) {
       toast.error(`Offer must be higher than current price (${formatCurrency(currentPrice, currency)})`);
       return;
@@ -181,12 +181,12 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
     const now = new Date();
     const end = new Date(endsAt);
     const diff = end.getTime() - now.getTime();
-    
+
     if (diff <= 0) return "Ended";
-    
+
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     return `${hours}h ${minutes}m`;
   };
 
@@ -218,8 +218,8 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-lg">{bid.item_name}</h3>
-                  <UserProfilePopover 
-                    userId={bid.user_id} 
+                  <UserProfilePopover
+                    userId={bid.user_id}
                     userName={bid.profiles?.full_name || "User"}
                   >
                     <button className="flex items-center gap-1 text-sm text-muted-foreground hover:underline cursor-pointer">
@@ -246,7 +246,7 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
                   {getTimeRemaining(bid.ends_at)}
                 </Badge>
               </div>
-              
+
               {bid.item_description && (
                 <p className="text-sm">{bid.item_description}</p>
               )}
