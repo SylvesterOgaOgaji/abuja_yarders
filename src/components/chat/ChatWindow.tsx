@@ -265,6 +265,11 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
         throw error;
       }
 
+      // Confirm message sent locally (don't wait for realtime)
+      setMessages(prev => prev.map(m =>
+        m.id === tempId ? { ...m, is_pending: false } : m
+      ));
+
     } catch (error: any) {
       toast.error(error.message || "Failed to send message");
     }
@@ -336,8 +341,8 @@ export const ChatWindow = ({ groupId, onRequestSeller }: ChatWindowProps) => {
                   >
                     <div
                       className={`max-w-[85%] sm:max-w-[70%] rounded-2xl px-3 sm:px-4 py-2 ${isOwn
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-secondary text-foreground"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-foreground"
                         } ${message.is_pending ? 'opacity-70' : ''}`}
                     >
                       <div className="flex justify-between items-start gap-2">
