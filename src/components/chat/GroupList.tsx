@@ -172,12 +172,14 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdminOrSubAdmin, o
                   </div>
                 )}
 
-                {isAdminOrSubAdmin && selectedGroupId === group.id && (
+                {selectedGroupId === group.id && (
                   <div className="px-3 sm:px-4 pb-3 sm:pb-4 border-t pt-2 sm:pt-3 bg-muted/30 flex gap-2 flex-wrap">
-                    <MemberManagementDialog
-                      groupId={group.id}
-                      groupName={group.name}
-                    />
+                    {isAdminOrSubAdmin && (
+                      <MemberManagementDialog
+                        groupId={group.id}
+                        groupName={group.name}
+                      />
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -191,20 +193,22 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdminOrSubAdmin, o
                       <Eye className="h-4 w-4" />
                       View Members
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditGroupId(group.id);
-                        setEditGroupName(group.name);
-                        setEditGroupDescription(group.description);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit Group
-                    </Button>
+                    {isAdminOrSubAdmin && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditGroupId(group.id);
+                          setEditGroupName(group.name);
+                          setEditGroupDescription(group.description);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Edit Group
+                      </Button>
+                    )}
                   </div>
                 )}
               </Card>

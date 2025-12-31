@@ -399,12 +399,12 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
 
   return (
     <Card className="flex-1 flex flex-col h-full overflow-hidden">
-      <div className="border-b p-3 sm:p-4 bg-muted/10 flex items-center justify-between flex-shrink-0">
+      <div className="border-b p-3 sm:p-4 bg-background/95 backdrop-blur z-50 sticky top-0 flex items-center justify-between flex-shrink-0">
         <div>
           <h2 className="font-semibold text-base sm:text-lg leading-none">{groupName || "Chat"}</h2>
         </div>
         {onClose && (
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={onClose}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground -mt-1" onClick={onClose}>
             <X className="h-5 w-5" />
             <span className="sr-only">Close Chat</span>
           </Button>
