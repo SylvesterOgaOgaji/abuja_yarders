@@ -22,6 +22,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedGroupId = searchParams.get("group");
   const [groupSheetOpen, setGroupSheetOpen] = useState(false);
@@ -58,6 +59,16 @@ const Index = () => {
 
       setUserId(session.user.id);
       setUserEmail(session.user.email || "");
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", session.user.id)
+        .single();
+
+      if (profile) {
+        setAvatarUrl(profile.avatar_url);
+      }
     } catch (error) {
       console.error("Auth check error:", error);
       navigate("/auth");
@@ -193,6 +204,7 @@ const Index = () => {
                   <div className="flex flex-col gap-4 mt-6">
                     <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
                       <Avatar>
+                        <AvatarImage src={avatarUrl || undefined} />
                         <AvatarFallback>{userEmail?.[0]?.toUpperCase() || "U"}</AvatarFallback>
                       </Avatar>
                       <div className="overflow-hidden">
