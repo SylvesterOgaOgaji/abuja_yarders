@@ -36,15 +36,21 @@ const AdminBanRequests = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        if (authChecked && !roleLoading && !isAdmin) {
-            navigate("/");
-            return;
-        }
-
         if (isAdmin) {
             fetchRequests();
         }
-    }, [isAdmin, roleLoading, navigate, authChecked]);
+    }, [isAdmin]);
+
+    if (authChecked && !roleLoading && !isAdmin) {
+        return (
+            <div className="flex flex-col justify-center items-center h-screen gap-4">
+                <ShieldAlert className="h-12 w-12 text-destructive" />
+                <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+                <p className="text-muted-foreground">You do not have permission to view this page.</p>
+                <Button onClick={() => navigate("/")}>Go Back Home</Button>
+            </div>
+        );
+    }
 
     const fetchRequests = async () => {
         try {

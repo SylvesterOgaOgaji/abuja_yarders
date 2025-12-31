@@ -50,21 +50,15 @@ export const BiddingPanel = ({ groupId, userId }: BiddingPanelProps) => {
   const [offerAmounts, setOfferAmounts] = useState<Record<string, string>>({});
   const [currency, setCurrency] = useState<"USD" | "NGN">("NGN");
 
+  /* 
   useEffect(() => {
+    // Force NGN as per user request
     const fetchCurrency = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("currency")
-        .eq("id", userId)
-        .single();
-
-      if (data?.currency) {
-        setCurrency(data.currency as "USD" | "NGN");
-      }
+      ...
     };
-
     fetchCurrency();
-  }, [userId]);
+  }, [userId]); 
+  */
 
   useEffect(() => {
     fetchBids();
