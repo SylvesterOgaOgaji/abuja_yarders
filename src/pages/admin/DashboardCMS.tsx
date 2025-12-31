@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash, Save, Upload, X, Pencil } from "lucide-react";
+import { Loader2, Plus, Trash, Save, Upload, X, Pencil, Check } from "lucide-react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -40,6 +40,14 @@ interface SupportCall {
     created_at: string;
 }
 
+interface TownGroup {
+    id: string;
+    name: string;
+    area_council: string | null;
+    is_active: boolean;
+    created_at: string;
+}
+
 export default function DashboardCMS() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("content");
@@ -63,6 +71,12 @@ export default function DashboardCMS() {
         is_active: true
     });
 
+    // Groups State
+    const [groups, setGroups] = useState<TownGroup[]>([]);
+    const [isGroupDialogOpen, setIsGroupDialogOpen] = useState(false);
+    const [editingGroup, setEditingGroup] = useState<TownGroup | null>(null);
+    const [newGroup, setNewGroup] = useState<Partial<TownGroup>>({ is_active: true });
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -70,19 +84,22 @@ export default function DashboardCMS() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [contentRes, excoRes, callsRes] = await Promise.all([
+            const [contentRes, excoRes, callsRes, groupsRes] = await Promise.all([
                 supabase.from("dashboard_content").select("*").order("key"),
                 supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
-                supabase.from("support_calls").select("*").order("created_at", { ascending: false })
+                supabase.from("support_calls").select("*").order("created_at", { ascending: false }),
+                supabase.from("groups").select("*").order("area_council", { ascending: true }).order("name", { ascending: true })
             ]);
 
             if (contentRes.error) throw contentRes.error;
             if (excoRes.error) throw excoRes.error;
             if (callsRes.error) throw callsRes.error;
+            if (groupsRes.error) throw groupsRes.error;
 
             setContentItems(contentRes.data || []);
             setExcoMembers(excoRes.data || []);
             setActiveCalls(callsRes.data || []);
+            setGroups(groupsRes.data as any || []); // Type cast as any to flexible map pending types regen
         } catch (error) {
             console.error("Error fetching CMS data:", error);
             toast.error("Failed to load CMS data");
@@ -289,6 +306,73 @@ export default function DashboardCMS() {
         }
     };
 
+    const saveGroup = async () => {
+        setSaving(true);
+        try {
+            const groupToSave = editingGroup || newGroup;
+            if (!groupToSave.name || !groupToSave.area_council) {
+                toast.error("Name and Area Council are required");
+                setSaving(false);
+                return;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (editingGroup) {
+                const { error } = await supabase
+                    .from("groups")
+                    .update({
+                        name: editingGroup.name,
+                        area_council: editingGroup.area_council,
+                        is_active: editingGroup.is_active
+                    })
+                    .eq("id", editingGroup.id);
+                if (error) throw error;
+                toast.success("Group updated");
+            } else {
+                const { error } = await supabase
+                    .from("groups")
+                    .insert([{
+                        name: newGroup.name!,
+                        area_council: newGroup.area_council!,
+                        is_active: newGroup.is_active,
+                        created_by: user?.id || '00000000-0000-0000-0000-000000000000' // Fallback for safety
+                    }]);
+                if (error) throw error;
+                toast.success("Group created");
+            }
+
+            setIsGroupDialogOpen(false);
+            setEditingGroup(null);
+            setNewGroup({ is_active: true });
+            fetchData();
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to save group");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const toggleGroupActive = async (group: TownGroup) => {
+        try {
+            const { error } = await supabase.from("groups").update({ is_active: !group.is_active }).eq("id", group.id);
+            if (error) throw error;
+            setGroups(prev => prev.map(g => g.id === group.id ? { ...g, is_active: !g.is_active } : g));
+            toast.success(`Group ${!group.is_active ? 'activated' : 'deactivated'}`);
+        } catch (e) { toast.error("Update failed"); }
+    };
+
+    const deleteGroup = async (id: string) => {
+        if (!confirm("Are you sure? This might affect users in this town.")) return;
+        try {
+            const { error } = await supabase.from("groups").delete().eq("id", id);
+            if (error) throw error;
+            setGroups(prev => prev.filter(g => g.id !== id));
+            toast.success("Group deleted");
+        } catch (e) { toast.error("Delete failed"); }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -308,10 +392,11 @@ export default function DashboardCMS() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="content">Content & Text</TabsTrigger>
                         <TabsTrigger value="exco">Exco Members</TabsTrigger>
                         <TabsTrigger value="calls">Active Calls</TabsTrigger>
+                        <TabsTrigger value="groups">Towns / Groups</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="content" className="space-y-4 mt-4">
@@ -436,9 +521,9 @@ export default function DashboardCMS() {
                                             <div className="flex items-center gap-2">
                                                 <CardTitle className="text-base">{call.title}</CardTitle>
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase font-bold border ${call.urgency === 'critical' ? 'bg-red-100 text-red-600 border-red-200' :
-                                                        call.urgency === 'high' ? 'bg-orange-100 text-orange-600 border-orange-200' :
-                                                            call.urgency === 'medium' ? 'bg-yellow-100 text-yellow-600 border-yellow-200' :
-                                                                'bg-green-100 text-green-600 border-green-200'
+                                                    call.urgency === 'high' ? 'bg-orange-100 text-orange-600 border-orange-200' :
+                                                        call.urgency === 'medium' ? 'bg-yellow-100 text-yellow-600 border-yellow-200' :
+                                                            'bg-green-100 text-green-600 border-green-200'
                                                     }`}>
                                                     {call.urgency}
                                                 </span>
@@ -461,6 +546,36 @@ export default function DashboardCMS() {
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingCall(call); setIsCallDialogOpen(true); }}>
                                             <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="groups" className="space-y-4 mt-4">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-semibold">Towns & Groups Management</h2>
+                            <Button onClick={() => { setEditingGroup(null); setIsGroupDialogOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4" /> Add Town Group
+                            </Button>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {groups.map((group) => (
+                                <Card key={group.id} className={`relative ${group.is_active ? '' : 'opacity-60 bg-muted/50'}`}>
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-base">{group.name}</CardTitle>
+                                        <CardDescription>{group.area_council}</CardDescription>
+                                    </CardHeader>
+                                    <div className="absolute top-2 right-2 flex gap-1">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleGroupActive(group)} title={group.is_active ? "Deactivate" : "Activate"}>
+                                            {group.is_active ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingGroup(group); setIsGroupDialogOpen(true); }}>
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteGroup(group.id)}>
+                                            <Trash className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </Card>
@@ -637,6 +752,56 @@ export default function DashboardCMS() {
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCallDialogOpen(false)}>Cancel</Button>
                         <Button onClick={saveCall} disabled={saving}>
+                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isGroupDialogOpen} onOpenChange={setIsGroupDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingGroup ? 'Edit Group' : 'Add New Group'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="flex flex-col gap-2">
+                            <Label>Area Council</Label>
+                            <select
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                value={editingGroup ? editingGroup.area_council || '' : newGroup.area_council || ''}
+                                onChange={(e) => editingGroup ? setEditingGroup({ ...editingGroup, area_council: e.target.value }) : setNewGroup({ ...newGroup, area_council: e.target.value })}
+                            >
+                                <option value="">Select Council</option>
+                                <option value="amac">AMAC</option>
+                                <option value="gwagwalada">Gwagwalada</option>
+                                <option value="kuje">Kuje</option>
+                                <option value="bwari">Bwari</option>
+                                <option value="abaji">Abaji</option>
+                                <option value="kwali">Kwali</option>
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label>Town / Group Name</Label>
+                            <Input
+                                value={editingGroup ? editingGroup.name : newGroup.name || ''}
+                                onChange={(e) => editingGroup ? setEditingGroup({ ...editingGroup, name: e.target.value }) : setNewGroup({ ...newGroup, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <input
+                                id="group-active"
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                checked={editingGroup ? editingGroup.is_active : newGroup.is_active ?? true}
+                                onChange={(e) => editingGroup ? setEditingGroup({ ...editingGroup, is_active: e.target.checked }) : setNewGroup({ ...newGroup, is_active: e.target.checked })}
+                            />
+                            <Label htmlFor="group-active">Is Active?</Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsGroupDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={saveGroup} disabled={saving}>
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save
                         </Button>

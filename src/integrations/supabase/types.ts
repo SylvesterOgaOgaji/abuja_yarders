@@ -232,6 +232,8 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+          area_council: string | null
+          is_active: boolean | null
         }
         Insert: {
           created_at?: string
@@ -240,6 +242,8 @@ export type Database = {
           id?: string
           name: string
           updated_at?: string
+          area_council?: string | null
+          is_active?: boolean | null
         }
         Update: {
           created_at?: string
@@ -248,6 +252,8 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          area_council?: string | null
+          is_active?: boolean | null
         }
         Relationships: []
       }
