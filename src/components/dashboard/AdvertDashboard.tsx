@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Gift, Heart, Megaphone, FileText, Target, Users, BookOpen, ExternalLink, HandHeart, User } from "lucide-react";
+import { Calendar, Gift, Heart, Megaphone, FileText, Target, Users, BookOpen, ExternalLink, HandHeart, User, Bell, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,6 +49,7 @@ export const AdvertDashboard = () => {
     const [isCallsOpen, setIsCallsOpen] = useState(false);
     const [selectedCall, setSelectedCall] = useState<SupportCall | null>(null);
     const [isPledgeOpen, setIsPledgeOpen] = useState(false);
+    const [notifications, setNotifications] = useState<any[]>([]);
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -58,11 +59,12 @@ export const AdvertDashboard = () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 setUserId(user?.id || null);
 
-                const [contentResult, excoResult, profilesResult, callsResult] = await Promise.all([
+                const [contentResult, excoResult, profilesResult, callsResult, notificationsResult] = await Promise.all([
                     supabase.from("dashboard_content").select("key, value"),
                     supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
                     supabase.from("profiles").select("id, full_name, avatar_url, birth_day, birth_month").gt('birth_day', 0),
-                    supabase.from("support_calls").select("*").eq("is_active", true).order("urgency", { ascending: false }).order("created_at", { ascending: false })
+                    supabase.from("support_calls").select("*").eq("is_active", true).order("urgency", { ascending: false }).order("created_at", { ascending: false }),
+                    supabase.from("notifications" as any).select("*").eq("is_read", false).order("created_at", { ascending: false })
                 ]);
 
                 if (contentResult.data) {
@@ -96,6 +98,11 @@ export const AdvertDashboard = () => {
                         return (urgencyOrder[b.urgency as keyof typeof urgencyOrder] || 0) - (urgencyOrder[a.urgency as keyof typeof urgencyOrder] || 0);
                     });
                     setActiveCalls(sortedCalls as SupportCall[]);
+                    setActiveCalls(sortedCalls as SupportCall[]);
+                }
+
+                if (notificationsResult.data) {
+                    setNotifications(notificationsResult.data);
                 }
 
             } catch (error) {
@@ -114,6 +121,11 @@ export const AdvertDashboard = () => {
         }
     };
 
+    const dismissNotification = async (id: string) => {
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        await supabase.from("notifications" as any).update({ is_read: true }).eq("id", id);
+    };
+
     return (
         <div className="h-full bg-gradient-to-br from-background to-secondary/20 overflow-hidden flex flex-col">
             <ScrollArea className="flex-1 p-4 md:p-6">
@@ -128,6 +140,26 @@ export const AdvertDashboard = () => {
                             {content["hero_subtitle"] || "Stay connected, informed, and involved."}
                         </p>
                     </div>
+
+                    {/* Notifications Banner */}
+                    {notifications.length > 0 && (
+                        <div className="space-y-2">
+                            {notifications.map((notification: any) => (
+                                <div key={notification.id} className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded shadow-sm flex justify-between items-start animate-in fade-in slide-in-from-top-2">
+                                    <div className="flex gap-3">
+                                        <Bell className="w-5 h-5 text-yellow-600 mt-0.5" />
+                                        <div>
+                                            <h4 className="font-bold text-yellow-800 dark:text-yellow-200 text-sm">{notification.title}</h4>
+                                            <p className="text-sm text-yellow-700 dark:text-yellow-300">{notification.message}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-yellow-200 dark:hover:bg-yellow-900/50" onClick={() => dismissNotification(notification.id)}>
+                                        <X className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Hero / Upcoming Programs */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -172,7 +204,16 @@ export const AdvertDashboard = () => {
                                 </div>
                                 <CardTitle className="text-lg">Special Notice</CardTitle>
                             </CardHeader>
-                            <CardContent className="text-sm text-muted-foreground pt-0">
+                            <CardContent className="text-sm text-muted-foreground pt-0 space-y-3">
+                                {content["announcement_image_url"] && (
+                                    <div className="rounded-md overflow-hidden bg-secondary/20 max-h-48 w-full flex items-center justify-center">
+                                        <img
+                                            src={content["announcement_image_url"]}
+                                            alt="Announcement"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                )}
                                 <p>
                                     {content["announcement_text"] || "Check here for the latest updates and important notices for all members."}
                                 </p>
@@ -268,7 +309,7 @@ export const AdvertDashboard = () => {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <FileText className="w-5 h-5 text-primary" />
-                                    2026 Policy Document
+                                    {content["policy_title"] || "2026 Policy Document"}
                                 </CardTitle>
                                 <CardDescription>
                                     Read The International Parent Academy Policy for 2026.

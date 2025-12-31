@@ -451,7 +451,7 @@ export default function DashboardCMS() {
                                 {/* Group: Resources & Policies */}
                                 <div className="space-y-4">
                                     <h3 className="font-semibold text-lg border-b pb-2">Resources & Policies</h3>
-                                    {contentItems.filter(i => i.key === 'policy_document_url' || i.key === 'pledge_reason_text').map(item => (
+                                    {contentItems.filter(i => i.key === 'policy_document_url' || i.key === 'policy_title' || i.key === 'pledge_reason_text').map(item => (
                                         <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
                                     ))}
                                 </div>
@@ -466,6 +466,7 @@ export default function DashboardCMS() {
                                         i.key !== 'special_notice_link' &&
                                         !i.key.endsWith('_text') &&
                                         i.key !== 'policy_document_url' &&
+                                        i.key !== 'policy_title' &&
                                         i.key !== 'pledge_reason_text'
                                     ).map(item => (
                                         <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />

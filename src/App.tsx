@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import SellerProfile from "./pages/SellerProfile";
 import DashboardCMS from "./pages/admin/DashboardCMS";
+import PledgeTracking from "@/pages/admin/PledgeTracking";
 import CommitmentAnalysis from "./pages/admin/CommitmentAnalysis";
 import Commitments from "./pages/Commitments";
 import Profile from "./pages/Profile";
@@ -63,6 +64,7 @@ const App = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
             <Route path="/admin/cms" element={<DashboardCMS />} />
+            <Route path="/admin/pledges" element={<PledgeTracking />} />
             <Route path="/admin/commitments" element={<CommitmentAnalysis />} />
             <Route path="/commitments" element={<Commitments />} />
             <Route path="/profile" element={<Profile />} />
