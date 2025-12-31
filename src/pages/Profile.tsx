@@ -43,6 +43,7 @@ interface ProfileData {
   commitment_followup_scale: number | null;
   commitment_financial_scale: number | null;
   volunteering_capacity: string | null;
+  volunteering_other_description: string | null;
   confirmation_agreement: boolean | null;
   email: string | null;
   birth_day: number | null;
@@ -72,6 +73,7 @@ export default function Profile() {
   const [commitmentFollowup, setCommitmentFollowup] = useState<number | undefined>(undefined);
   const [commitmentFinancial, setCommitmentFinancial] = useState<number | undefined>(undefined);
   const [volunteeringCapacity, setVolunteeringCapacity] = useState("");
+  const [volunteeringOtherDescription, setVolunteeringOtherDescription] = useState("");
   const [birthDay, setBirthDay] = useState<string>("");
   const [birthMonth, setBirthMonth] = useState<string>("");
 
@@ -162,7 +164,7 @@ export default function Profile() {
 
       const { data: profileData, error } = await supabase
         .from("profiles")
-        .select("full_name, phone_number, bio, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement, birth_day, birth_month, avatar_url")
+        .select("full_name, phone_number, bio, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, volunteering_other_description, confirmation_agreement, birth_day, birth_month, avatar_url")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -187,6 +189,7 @@ export default function Profile() {
         setCommitmentFollowup(typedProfile.commitment_followup_scale ?? undefined);
         setCommitmentFinancial(typedProfile.commitment_financial_scale ?? undefined);
         setVolunteeringCapacity(typedProfile.volunteering_capacity || "");
+        setVolunteeringOtherDescription(typedProfile.volunteering_other_description || "");
 
         if (typedProfile.birth_day && typedProfile.birth_month) {
           setBirthDay(typedProfile.birth_day.toString().padStart(2, '0'));
@@ -196,6 +199,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error("Auth check error:", error);
+      toast.error("An error occurred loading your profile");
       navigate("/auth");
     } finally {
       setLoading(false);
@@ -269,6 +273,7 @@ export default function Profile() {
         commitment_followup_scale: commitmentFollowup,
         commitment_financial_scale: commitmentFinancial,
         volunteering_capacity: volunteeringCapacity || null,
+        volunteering_other_description: volunteeringCapacity === 'other' ? (volunteeringOtherDescription || null) : null,
         birth_day: bDay,
         birth_month: bMonth
       })
@@ -555,6 +560,17 @@ export default function Profile() {
                     <Label htmlFor="vc-other" className="text-primary-foreground cursor-pointer">Other</Label>
                   </div>
                 </RadioGroup>
+
+                {volunteeringCapacity === 'other' && (
+                  <div className="mt-2 pl-6">
+                    <Input
+                      placeholder="Please specify what you would like to provide..."
+                      className="bg-background"
+                      value={volunteeringOtherDescription}
+                      onChange={(e) => setVolunteeringOtherDescription(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
 
               {profile?.confirmation_agreement && (
