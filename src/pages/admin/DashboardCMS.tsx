@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash, Save, Upload, X } from "lucide-react";
+import { Loader2, Plus, Trash, Save, Upload, X, Pencil } from "lucide-react";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -305,7 +305,7 @@ export default function DashboardCMS() {
                                     </CardContent>
                                     <div className="absolute top-2 right-2 flex gap-1">
                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExco(member); setIsExcoDialogOpen(true); }}>
-                                            <Upload className="h-4 w-4" /> {/* Reusing icon for edit, should be Edit/Pencil but using Upload for now or just generic */}
+                                            <Pencil className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteExcoMember(member.id)}>
                                             <Trash className="h-4 w-4" />
