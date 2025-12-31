@@ -48,6 +48,7 @@ export const AdvertDashboard = () => {
     const [activeCalls, setActiveCalls] = useState<SupportCall[]>([]);
     const [isCallsOpen, setIsCallsOpen] = useState(false);
     const [selectedCall, setSelectedCall] = useState<SupportCall | null>(null);
+    const [isPledgeOpen, setIsPledgeOpen] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -298,7 +299,7 @@ export const AdvertDashboard = () => {
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-900/20">
+                                    <Button variant="outline" className="h-auto py-3 px-2 flex flex-col gap-1 border-red-200 hover:bg-red-50 dark:border-red-900/50 dark:hover:bg-red-900/20" onClick={() => { setSelectedCall(null); setIsPledgeOpen(true); }}>
                                         <HandHeart className="w-5 h-5 text-red-500" />
                                         <span className="text-xs font-semibold">Willing Pledge</span>
                                     </Button>
@@ -404,7 +405,7 @@ export const AdvertDashboard = () => {
                                         )}
                                     </CardContent>
                                     <CardFooter className="p-4 pt-0">
-                                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white" onClick={() => setSelectedCall(call)}>
+                                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700 text-white" onClick={() => { setSelectedCall(call); setIsPledgeOpen(true); }}>
                                             <HandHeart className="w-4 h-4 mr-2" /> Respond / Pledge
                                         </Button>
                                     </CardFooter>
@@ -422,8 +423,8 @@ export const AdvertDashboard = () => {
             </Dialog>
 
             <PledgeDialog
-                open={!!selectedCall}
-                onOpenChange={(open) => !open && setSelectedCall(null)}
+                open={isPledgeOpen}
+                onOpenChange={setIsPledgeOpen}
                 call={selectedCall}
                 userId={userId}
                 onSuccess={() => { }}

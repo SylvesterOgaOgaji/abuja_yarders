@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash, Save, Upload, X, Pencil, Check } from "lucide-react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 
@@ -134,16 +134,26 @@ export default function DashboardCMS() {
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-            const filePath = `cms/${fileName}`;
+
+            // Determine bucket based on file type or target key
+            let bucketName = 'media';
+            if (targetKey === 'policy_document_url' || file.type.includes('pdf')) {
+                bucketName = 'documents';
+            } else if (targetKey?.includes('image') || !targetKey) { // exco images or other images
+                bucketName = 'avatars'; // or 'media', let's use 'media' for general CMS images to keep avatars user-specific usually, but 'avatars' bucket is public so it works. Let's use 'media' for CMS content.
+                bucketName = 'media';
+            }
+
+            const filePath = `${fileName}`;
 
             const { error: uploadError } = await supabase.storage
-                .from('media')
+                .from(bucketName)
                 .upload(filePath, file);
 
             if (uploadError) throw uploadError;
 
             const { data: { publicUrl } } = supabase.storage
-                .from('media')
+                .from(bucketName)
                 .getPublicUrl(filePath);
 
             if (targetKey) {
@@ -156,7 +166,7 @@ export default function DashboardCMS() {
                 } else {
                     setNewMember({ ...newMember, image_url: publicUrl });
                 }
-                toast.success("Image uploaded");
+                toast.success("File uploaded successfully");
             }
         } catch (error) {
             console.error("Error uploading file:", error);
@@ -405,61 +415,62 @@ export default function DashboardCMS() {
                                 <CardTitle>Dashboard Texts & Links</CardTitle>
                                 <CardDescription>Manage welcome messages, resource links, organization info, and announcements.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-6">
-                                {contentItems.map((item) => (
-                                    <div key={item.key} className="space-y-2 border-b pb-4 last:border-0">
-                                        <div className="flex justify-between items-start">
-                                            <Label htmlFor={item.key} className="text-base font-semibold capitalize">
-                                                {item.key.replace(/_/g, " ")}
-                                            </Label>
-                                            <span className="text-xs text-muted-foreground max-w-[50%] text-right">{item.description}</span>
-                                        </div>
+                            <CardContent className="space-y-8">
+                                {/* Group: Hero Section */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Hero Section</h3>
+                                    {contentItems.filter(i => i.key.startsWith('hero_')).map(item => (
+                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                    ))}
+                                </div>
 
-                                        <div className="flex gap-2 items-start">
-                                            {/* Logic to determine input type based on key or content */}
-                                            {item.key.includes("text") || item.key.includes("desc") || item.key.includes("bio") || item.key.includes("goals") ? (
-                                                <Textarea
-                                                    id={item.key}
-                                                    value={item.value || ""}
-                                                    onChange={(e) => {
-                                                        const newVal = e.target.value;
-                                                        setContentItems(prev => prev.map(p => p.key === item.key ? { ...p, value: newVal } : p));
-                                                    }}
-                                                    className="flex-1 min-h-[100px]"
-                                                />
-                                            ) : (
-                                                <div className="flex-1 flex gap-2">
-                                                    <Input
-                                                        id={item.key}
-                                                        value={item.value || ""}
-                                                        onChange={(e) => {
-                                                            const newVal = e.target.value;
-                                                            setContentItems(prev => prev.map(p => p.key === item.key ? { ...p, value: newVal } : p));
-                                                        }}
-                                                    />
-                                                    {/* Add file upload option for PDF links or images if needed */}
-                                                    {(item.key === 'policy_document_url' || item.key.includes('image')) && (
-                                                        <div className="flex-shrink-0">
-                                                            <input
-                                                                type="file"
-                                                                id={`upload-${item.key}`}
-                                                                className="hidden"
-                                                                accept={item.key.includes('image') ? "image/*" : ".pdf,.doc,.docx"}
-                                                                onChange={(e) => handleFileUpload(e, item.key)}
-                                                            />
-                                                            <Button variant="outline" size="icon" onClick={() => document.getElementById(`upload-${item.key}`)?.click()}>
-                                                                <Upload className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-                                            <Button size="icon" onClick={() => handleContentUpdate(item.key, item.value || "")}>
-                                                <Save className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
+                                {/* Group: Featured Event */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Featured Event</h3>
+                                    {contentItems.filter(i => i.key.startsWith('featured_')).map(item => (
+                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                    ))}
+                                </div>
+
+                                {/* Group: Announcements */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Announcements</h3>
+                                    {contentItems.filter(i => i.key.startsWith('announcement_') || i.key === 'special_notice_link').map(item => (
+                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                    ))}
+                                </div>
+
+                                {/* Group: Mission/Vision */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Mission & Vision</h3>
+                                    {contentItems.filter(i => i.key.endsWith('_text') && !i.key.startsWith('announcement')).map(item => (
+                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                    ))}
+                                </div>
+
+                                {/* Group: Resources & Policies */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Resources & Policies</h3>
+                                    {contentItems.filter(i => i.key === 'policy_document_url' || i.key === 'pledge_reason_text').map(item => (
+                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                    ))}
+                                </div>
+
+                                {/* Fallback for others */}
+                                <div className="space-y-4">
+                                    <h3 className="font-semibold text-lg border-b pb-2">Other Content</h3>
+                                    {contentItems.filter(i =>
+                                        !i.key.startsWith('hero_') &&
+                                        !i.key.startsWith('featured_') &&
+                                        !i.key.startsWith('announcement_') &&
+                                        i.key !== 'special_notice_link' &&
+                                        !i.key.endsWith('_text') &&
+                                        i.key !== 'policy_document_url' &&
+                                        i.key !== 'pledge_reason_text'
+                                    ).map(item => (
+                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                    ))}
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
@@ -811,3 +822,67 @@ export default function DashboardCMS() {
         </div>
     );
 }
+
+const ContentItemEditor = ({ item, onUpdate, onUpload }: { item: DashboardContent, onUpdate: (k: string, v: string) => void, onUpload: (e: React.ChangeEvent<HTMLInputElement>, k: string) => void }) => {
+    const [localValue, setLocalValue] = useState(item.value || "");
+
+    useEffect(() => {
+        setLocalValue(item.value || "");
+    }, [item.value]);
+
+    const isLongText = item.key.includes("text") || item.key.includes("desc") || item.key.includes("bio") || item.key.includes("goals");
+    const isFile = item.key === 'policy_document_url' || item.key.includes('image');
+
+    return (
+        <div className="space-y-2 border p-3 rounded-lg bg-card/50">
+            <div className="flex justify-between items-start">
+                <Label htmlFor={item.key} className="text-sm font-semibold capitalize text-foreground/80">
+                    {item.key.replace(/_/g, " ")}
+                </Label>
+                <span className="text-[10px] text-muted-foreground">{item.description}</span>
+            </div>
+
+            <div className="flex gap-2 items-start">
+                {isLongText ? (
+                    <Textarea
+                        id={item.key}
+                        value={localValue}
+                        onChange={(e) => setLocalValue(e.target.value)}
+                        className="flex-1 min-h-[80px] text-sm"
+                    />
+                ) : (
+                    <div className="flex-1 flex gap-2">
+                        <Input
+                            id={item.key}
+                            value={localValue}
+                            onChange={(e) => setLocalValue(e.target.value)}
+                            className="text-sm"
+                        />
+                        {isFile && (
+                            <div className="flex-shrink-0">
+                                <input
+                                    type="file"
+                                    id={`upload-${item.key}`}
+                                    className="hidden"
+                                    accept={item.key.includes('image') ? "image/*" : ".pdf,.doc,.docx"}
+                                    onChange={(e) => onUpload(e, item.key)}
+                                />
+                                <Button variant="outline" size="icon" onClick={() => document.getElementById(`upload-${item.key}`)?.click()} title="Upload File">
+                                    <Upload className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        )}
+                        {item.key === 'policy_document_url' && item.value && (
+                            <Button variant="ghost" size="icon" onClick={() => window.open(item.value || '', '_blank')}>
+                                <ExternalLink className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                )}
+                <Button size="icon" onClick={() => onUpdate(item.key, localValue)} title="Save" disabled={localValue === item.value}>
+                    <Save className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+    );
+};

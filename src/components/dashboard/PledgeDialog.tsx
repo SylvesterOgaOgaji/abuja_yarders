@@ -26,7 +26,7 @@ export function PledgeDialog({ open, onOpenChange, call, userId, onSuccess }: Pl
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async () => {
-        if (!userId || !call) return;
+        if (!userId) return;
 
         // Basic validation
         if (!amount && !note) {
@@ -41,9 +41,9 @@ export function PledgeDialog({ open, onOpenChange, call, userId, onSuccess }: Pl
                 .insert({
                     user_id: userId,
                     commitment_type: "support_pledge",
-                    support_call_id: call.id,
+                    support_call_id: call?.id || null,
                     amount_pledged: amount ? parseFloat(amount) : 0,
-                    description: note || `Pledge for: ${call.title}`,
+                    description: note || (call ? `Pledge for: ${call.title}` : "General Willing Pledge"),
                     status: 'active'
                 });
 
@@ -63,18 +63,20 @@ export function PledgeDialog({ open, onOpenChange, call, userId, onSuccess }: Pl
         }
     };
 
-    if (!call) return null;
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <Megaphone className="w-5 h-5 text-orange-500" />
-                        Pledge Support
+                        <Megaphone className={`w-5 h-5 ${call ? "text-orange-500" : "text-red-500"}`} />
+                        {call ? "Pledge Support" : "Willing Pledge"}
                     </DialogTitle>
                     <DialogDescription>
-                        Response to: <span className="font-semibold text-foreground">{call.title}</span>
+                        {call ? (
+                            <>Response to: <span className="font-semibold text-foreground">{call.title}</span></>
+                        ) : (
+                            "Make a general pledge to support the community."
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 

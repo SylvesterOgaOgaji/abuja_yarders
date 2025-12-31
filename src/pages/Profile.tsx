@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Save, Loader2, Shield, Store, MapPin, Phone, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -55,6 +55,7 @@ interface ProfileData {
   email: string | null;
   birth_day: number | null;
   birth_month: number | null;
+  avatar_url: string | null;
 }
 
 export default function Profile() {
@@ -63,6 +64,7 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Form state
   const [fullName, setFullName] = useState("");
@@ -136,7 +138,7 @@ export default function Profile() {
 
       const { data: profileData, error } = await supabase
         .from("profiles")
-        .select("full_name, phone_number, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement, birth_day, birth_month")
+        .select("full_name, phone_number, years_in_yard, area_council, town, created_at, commitment_followup_scale, commitment_financial_scale, volunteering_capacity, confirmation_agreement, birth_day, birth_month, avatar_url")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -148,7 +150,7 @@ export default function Profile() {
 
       if (profileData) {
         const typedProfile = {
-          ...profileData,
+          ...(profileData as any),
           email: session.user.email || null
         } as ProfileData;
         setProfile(typedProfile);
@@ -165,12 +167,56 @@ export default function Profile() {
           setBirthDay(typedProfile.birth_day.toString().padStart(2, '0'));
           setBirthMonth(typedProfile.birth_month.toString().padStart(2, '0'));
         }
+        setAvatarUrl(typedProfile.avatar_url || null);
       }
     } catch (error) {
       console.error("Auth check error:", error);
       navigate("/auth");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      setSaving(true);
+      const file = event.target.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}-${Math.random()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrl);
+
+      // Auto-save the avatar URL to profile immediately
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", userId);
+
+      if (updateError) throw updateError;
+
+      toast.success("Profile picture updated!");
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Error uploading avatar');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -238,12 +284,29 @@ export default function Profile() {
 
         <Card className="bg-secondary">
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <Avatar className="h-24 w-24">
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {fullName.charAt(0).toUpperCase() || "U"}
-                </AvatarFallback>
-              </Avatar>
+            <div className="flex flex-col items-center mb-4 gap-2">
+              <div className="relative group cursor-pointer">
+                <Avatar className="h-24 w-24 border-2 border-primary/20">
+                  <AvatarImage src={avatarUrl || ""} />
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    {fullName.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div
+                  className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => document.getElementById('avatar-upload')?.click()}
+                >
+                  <span className="text-white text-xs font-medium">Change</span>
+                </div>
+              </div>
+              <Input
+                type="file"
+                id="avatar-upload"
+                className="hidden"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                disabled={saving}
+              />
             </div>
             <CardTitle className="text-primary-foreground flex items-center justify-center gap-2 flex-wrap">
               My Profile
