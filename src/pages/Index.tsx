@@ -104,6 +104,15 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/profile")}
+                size="sm"
+                className="gap-1 text-xs px-2 sm:px-3"
+              >
+                <User className="h-3 w-3" />
+                <span className="hidden sm:inline">Profile</span>
+              </Button>
               {isAdmin && (
                 <Button
                   variant="outline"
@@ -132,7 +141,7 @@ const Index = () => {
       <main className="flex-1 w-full overflow-hidden">
         <div className="h-full w-full p-2 sm:p-4 md:p-6">
           <div className="grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[350px_1fr] gap-3 sm:gap-4 md:gap-6 h-[calc(100vh-80px)] sm:h-[calc(100vh-90px)] md:h-[calc(100vh-140px)] max-w-full">
-            <div className="h-full overflow-y-auto overscroll-contain">
+            <div className={`h-full overflow-y-auto overscroll-contain ${selectedGroupId ? 'hidden md:block' : ''}`}>
               <GroupList
                 key={refreshKey}
                 selectedGroupId={selectedGroupId}
@@ -141,7 +150,7 @@ const Index = () => {
                 onCreateGroup={() => setCreateDialogOpen(true)}
               />
             </div>
-            <div className="h-full overflow-hidden">
+            <div className={`h-full overflow-hidden ${selectedGroupId ? 'block' : 'hidden md:block'}`}>
               {selectedGroupId ? (
                 <ChatWindow
                   groupId={selectedGroupId}
