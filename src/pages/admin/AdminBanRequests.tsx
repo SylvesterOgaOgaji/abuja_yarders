@@ -54,8 +54,8 @@ const AdminBanRequests = () => {
 
     const fetchRequests = async () => {
         try {
-            // @ts-ignore - ban_requests table
-            const { data, error } = await supabase
+            // @ts-ignore
+            const { data, error } = await (supabase as any)
                 .from("ban_requests")
                 .select(`
                     *,
@@ -92,8 +92,7 @@ const AdminBanRequests = () => {
             }
 
             // 2. Update Request Status
-            // @ts-ignore
-            const { error: requestError } = await supabase
+            const { error: requestError } = await (supabase as any)
                 .from("ban_requests")
                 .update({ status: action === 'approve' ? 'approved' : 'rejected' })
                 .eq("id", requestId);
