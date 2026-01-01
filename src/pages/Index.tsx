@@ -127,7 +127,7 @@ const Index = () => {
                 </Sheet>
               </div>
 
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-primary-foreground truncate">
                   Abuja Yarder Meeting Point
                 </h1>
@@ -192,7 +192,10 @@ const Index = () => {
             </div>
 
             {/* Right Hamburger (Profile) - Mobile Only */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center">
+              <div className="mr-2">
+                <NotificationBell />
+              </div>
               <Sheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary/20 -mr-2">
