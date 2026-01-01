@@ -37,10 +37,31 @@ const persister = createSyncStoragePersister({
   storage: window.localStorage,
 });
 
-const App = () => {
+const AppRoutes = () => {
   usePushNotifications(); // Initialize push notifications
   useProfileCompletion(); // Enforce profile completion
 
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/auth" element={<Auth />} />
+      <Route path="/seller/:userId" element={<SellerProfile />} />
+      <Route path="/admin/cms" element={<DashboardCMS />} />
+      <Route path="/admin/pledges" element={<PledgeTracking />} />
+      <Route path="/admin/commitments" element={<CommitmentAnalysis />} />
+      <Route path="/admin/reports" element={<AdminReports />} />
+      <Route path="/admin/users" element={<AdminUserManagement />} />
+      <Route path="/admin/ban-requests" element={<AdminBanRequests />} />
+      <Route path="/commitments" element={<Commitments />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/legal/:type" element={<LegalPage />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App = () => {
   useEffect(() => {
     // Initialize RevenueCat only on native platforms
     if (Capacitor.isNativePlatform()) {
@@ -65,22 +86,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/seller/:userId" element={<SellerProfile />} />
-            <Route path="/admin/cms" element={<DashboardCMS />} />
-            <Route path="/admin/pledges" element={<PledgeTracking />} />
-            <Route path="/admin/commitments" element={<CommitmentAnalysis />} />
-            <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-            <Route path="/admin/ban-requests" element={<AdminBanRequests />} />
-            <Route path="/commitments" element={<Commitments />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/legal/:type" element={<LegalPage />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
     </PersistQueryClientProvider>
