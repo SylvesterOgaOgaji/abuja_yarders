@@ -234,7 +234,7 @@ const Index = () => {
                       Profile
                     </Button>
 
-                    {isAdmin && (
+                    {isAdminOrSubAdmin && (
                       <>
                         <Button
                           variant="ghost"
@@ -246,17 +246,6 @@ const Index = () => {
                         >
                           <LayoutTemplate className="h-5 w-5" />
                           Admin Dashboard
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            navigate("/admin/users");
-                            setProfileSheetOpen(false);
-                          }}
-                          className="justify-start gap-2 h-12"
-                        >
-                          <Users className="h-5 w-5" />
-                          User Management
                         </Button>
                         <Button
                           variant="ghost"
@@ -279,6 +268,22 @@ const Index = () => {
                         >
                           <Handshake className="h-5 w-5" />
                           Commitment Analysis
+                        </Button>
+                      </>
+                    )}
+
+                    {isAdmin && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/users");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <Users className="h-5 w-5" />
+                          User Management
                         </Button>
                         <Button
                           variant="ghost"
