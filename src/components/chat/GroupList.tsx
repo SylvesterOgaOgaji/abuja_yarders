@@ -125,7 +125,7 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdminOrSubAdmin, o
               <Card key={group.id} className="overflow-hidden relative">
                 <div
                   className={`p-3 sm:p-4 transition-all ${selectedGroupId === group.id
-                    ? "border-l-4 border-l-primary bg-secondary"
+                    ? "border-l-4 border-l-[#FFD700] bg-black text-[#FFD700]"
                     : "hover:bg-muted"
                     } ${!hasAccess ? "opacity-60 bg-muted/50 cursor-not-allowed" : "cursor-pointer"}`}
                   onClick={() => {
@@ -137,13 +137,13 @@ export const GroupList = ({ selectedGroupId, onSelectGroup, isAdminOrSubAdmin, o
                   }}
                 >
                   <div className={`flex items-start gap-2 sm:gap-3 min-w-0 ${!hasAccess ? "blur-[0.5px] grayscale select-none" : ""}`}>
-                    <div className="bg-primary/10 p-1.5 sm:p-2 rounded-lg flex-shrink-0">
-                      <Users className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                    <div className={`${selectedGroupId === group.id ? "bg-[#FFD700]/20" : "bg-primary/10"} p-1.5 sm:p-2 rounded-lg flex-shrink-0`}>
+                      <Users className={`h-4 w-4 sm:h-5 sm:w-5 ${selectedGroupId === group.id ? "text-[#FFD700]" : "text-primary"}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm sm:text-base text-foreground truncate">{group.name}</h3>
+                      <h3 className={`font-semibold text-sm sm:text-base truncate ${selectedGroupId === group.id ? "text-[#FFD700]" : "text-foreground"}`}>{group.name}</h3>
                       {group.description && (
-                        <p className="text-xs sm:text-sm text-muted-foreground truncate">{group.description}</p>
+                        <p className={`text-xs sm:text-sm truncate ${selectedGroupId === group.id ? "text-[#FFD700]/80" : "text-muted-foreground"}`}>{group.description}</p>
                       )}
                     </div>
                   </div>
