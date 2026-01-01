@@ -481,7 +481,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
 
                       <div
                         className={`rounded-2xl px-3 sm:px-4 py-2 ${isOwn
-                          ? "bg-primary text-primary-foreground rounded-br-none"
+                          ? "bg-primary text-white rounded-br-none"
                           : "bg-secondary text-foreground rounded-bl-none"
                           } ${message.is_pending ? 'opacity-70' : ''}`}
                       >
