@@ -16,6 +16,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -157,7 +158,8 @@ const Index = () => {
             </div>
 
             {/* Desktop Buttons */}
-            <div className="hidden md:flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap">
+            <div className="hidden md:flex gap-1 sm:gap-2 flex-shrink-0 flex-wrap items-center">
+              <NotificationBell />
               <Button
                 variant="outline"
                 onClick={() => navigate("/profile")}

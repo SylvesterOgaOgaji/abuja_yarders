@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface AdminLayoutProps {
     children: React.ReactNode;
@@ -102,27 +103,34 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     return (
         <div className="flex min-h-screen w-full flex-col bg-background md:flex-row">
             {/* Mobile Header */}
-            <header className="flex h-16 items-center border-b px-4 md:hidden justify-between">
+            <header className="flex h-16 items-center border-b px-4 md:hidden justify-between bg-white z-10">
                 <div className="font-bold">Admin Portal</div>
-                <Sheet open={open} onOpenChange={setOpen}>
-                    <SheetTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <Menu className="h-6 w-6" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent side="left" className="p-0 w-64">
-                        <SidebarContent />
-                    </SheetContent>
-                </Sheet>
+                <div className="flex items-center gap-2">
+                    <NotificationBell />
+                    <Sheet open={open} onOpenChange={setOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <Menu className="h-6 w-6" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="left" className="p-0 w-64">
+                            <SidebarContent />
+                        </SheetContent>
+                    </Sheet>
+                </div>
             </header>
 
             {/* Desktop Sidebar */}
-            <aside className="hidden w-64 md:block flex-shrink-0">
+            <aside className="hidden w-64 md:block flex-shrink-0 no-print">
                 <SidebarContent />
             </aside>
 
             {/* Main Content */}
             <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+                {/* Desktop Header for Notifications */}
+                <div className="hidden md:flex justify-end p-4 border-b bg-white">
+                    <NotificationBell />
+                </div>
                 <div className="flex-1 p-4 md:p-8 lg:p-10 container mx-auto max-w-7xl animate-in fade-in zoom-in-95 duration-300">
                     {children}
                 </div>
@@ -130,3 +138,5 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
     );
 }
+
+

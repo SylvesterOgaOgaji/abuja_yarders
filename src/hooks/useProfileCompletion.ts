@@ -50,6 +50,30 @@ export const useProfileCompletion = () => {
                         onClick: () => navigate("/profile"),
                     },
                 });
+
+                // Create persistent notification if not exists
+                const createPersistentNotification = async () => {
+                    // @ts-ignore
+                    const { data: existing } = await (supabase as any)
+                        .from('notifications')
+                        .select('id')
+                        .eq('user_id', session.user.id)
+                        .eq('type', 'profile')
+                        .eq('is_read', false)
+                        .limit(1);
+
+                    if (!existing || existing.length === 0) {
+                        // @ts-ignore
+                        await (supabase as any).from('notifications').insert({
+                            user_id: session.user.id,
+                            title: 'Incomplete Profile',
+                            message: 'Your profile is incomplete. Please update your details and uploading a photo to access all features.',
+                            type: 'profile',
+                            action_link: '/profile'
+                        });
+                    }
+                };
+                createPersistentNotification();
             }
         };
 
