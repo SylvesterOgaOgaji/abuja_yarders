@@ -98,6 +98,8 @@ export const UserProfilePopover = ({ userId, userName, currentUserRole, currentU
               <div className="flex items-center gap-1">
                 <p className="font-semibold truncate">{userName}</p>
                 {isBanned && <Badge variant="destructive" className="text-[10px] h-4 px-1">BANNED</Badge>}
+                {targetIsAdmin && <Badge variant="default" className="text-[10px] h-4 px-1 bg-primary">ADMIN</Badge>}
+                {!targetIsAdmin && targetIsSubAdmin && <Badge variant="secondary" className="text-[10px] h-4 px-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">SUB-ADMIN</Badge>}
               </div>
               {!loading && isSeller && (
                 <Badge variant="default" className="gap-1 text-xs mt-1">

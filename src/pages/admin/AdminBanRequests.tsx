@@ -35,23 +35,6 @@ const AdminBanRequests = () => {
     const { isAdmin, loading: roleLoading } = useUserRole(currentUserId);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (isAdmin) {
-            fetchRequests();
-        }
-    }, [isAdmin]);
-
-    if (authChecked && !roleLoading && !isAdmin) {
-        return (
-            <div className="flex flex-col justify-center items-center h-screen gap-4">
-                <ShieldAlert className="h-12 w-12 text-destructive" />
-                <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
-                <p className="text-muted-foreground">You do not have permission to view this page.</p>
-                <Button onClick={() => navigate("/")}>Go Back Home</Button>
-            </div>
-        );
-    }
-
     const fetchRequests = async () => {
         try {
             // @ts-ignore
@@ -78,6 +61,23 @@ const AdminBanRequests = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (isAdmin) {
+            fetchRequests();
+        }
+    }, [isAdmin]);
+
+    if (authChecked && !roleLoading && !isAdmin) {
+        return (
+            <div className="flex flex-col justify-center items-center h-screen gap-4">
+                <ShieldAlert className="h-12 w-12 text-destructive" />
+                <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+                <p className="text-muted-foreground">You do not have permission to view this page.</p>
+                <Button onClick={() => navigate("/")}>Go Back Home</Button>
+            </div>
+        );
+    }
 
     const handleAction = async (requestId: string, action: 'approve' | 'reject', targetUserId: string) => {
         try {

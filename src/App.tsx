@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import Push Hook
 import AdminUserManagement from "@/pages/admin/AdminUserManagement";
 import AdminBanRequests from "@/pages/admin/AdminBanRequests";
+import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ const persister = createSyncStoragePersister({
 
 const App = () => {
   usePushNotifications(); // Initialize push notifications
+  useProfileCompletion(); // Enforce profile completion
 
   useEffect(() => {
     // Initialize RevenueCat only on native platforms

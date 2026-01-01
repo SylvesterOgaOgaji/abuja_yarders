@@ -176,7 +176,7 @@ const Auth = () => {
         });
 
         if (error) throw error;
-        toast.success("Account created! You can now log in.");
+        toast.success("Account created! Please check your email to confirm your account.");
         setIsLogin(true);
       }
     } catch (error: unknown) {
