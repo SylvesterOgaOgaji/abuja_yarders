@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Send, Gavel, BadgeCheck, Trash2, ShieldCheck, X } from "lucide-react";
+import { Send, Gavel, BadgeCheck, Trash2, ShieldCheck, X, Pin, PinOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuota } from "@/hooks/useMediaQuota";
@@ -35,8 +35,10 @@ interface Message {
     avatar_url?: string | null;
   };
   media_uploads: MediaUpload[];
+  media_uploads: MediaUpload[];
   isSeller?: boolean;
   is_pending?: boolean;
+  is_pinned?: boolean;
 }
 
 interface ChatWindowProps {
@@ -51,6 +53,7 @@ const messageSchema = z.object({
 
 export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("chat");
@@ -244,8 +247,13 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
       }));
 
       setMessages(messagesWithProfiles as any);
+
+      // Find pinned message
+      const pinned = messagesWithProfiles.find(m => m.is_pinned);
+      setPinnedMessage(pinned as any || null);
     } else {
       setMessages([]);
+      setPinnedMessage(null);
     }
   };
 
@@ -445,203 +453,248 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
           </TabsList>
         </div>
 
-        <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex overflow-hidden">
-          <div className="flex-1 overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-3 sm:space-y-4">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-center text-muted-foreground">
-                <div className="space-y-2">
-                  <p className="font-medium">No messages yet</p>
-                  <p className="text-sm">Start the conversation by sending a message below!</p>
-                </div>
+      </div>
+
+      <TabsContent value="chat" className="flex-1 flex flex-col m-0 data-[state=active]:flex overflow-hidden">
+        {pinnedMessage && (
+          <div className="bg-primary/5 border-b border-primary/10 p-2 flex items-start gap-2 flex-shrink-0">
+            <div className="bg-primary/10 p-1 rounded">
+              <Pin className="h-3 w-3 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0" onClick={() => {
+              // Scroll to message?
+              const el = document.getElementById(`msg-${pinnedMessage.id}`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }}>
+              <p className="text-xs font-medium text-primary mb-0.5">Pinned Message</p>
+              <p className="text-xs text-muted-foreground truncate cursor-pointer hover:underline">
+                {pinnedMessage.content}
+              </p>
+            </div>
+            {canModerate && (
+              <button
+                onClick={() => handlePin(pinnedMessage)}
+                className="p-1 hover:bg-black/5 rounded"
+              >
+                <X className="h-3 w-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-3 sm:space-y-4">
+          {messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-center text-muted-foreground">
+              <div className="space-y-2">
+                <p className="font-medium">No messages yet</p>
+                <p className="text-sm">Start the conversation by sending a message below!</p>
               </div>
-            ) : (
-              messages.map((message) => {
-                const isOwn = message.user_id === userId;
-                const canDelete = isOwn || canModerate;
+            </div>
+          ) : (
+            messages.map((message) => {
+              const isOwn = message.user_id === userId;
+              const canDelete = isOwn || canModerate;
 
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isOwn ? "justify-end" : "justify-start"} group relative mb-2`}
-                  >
-                    <div className={`flex items-end gap-2 max-w-[85%] sm:max-w-[70%] ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
-                      {!isOwn && (
-                        <UserProfilePopover
-                          userId={message.user_id}
-                          userName={message.profiles?.full_name || "User"}
-                          currentUserRole={isAdmin ? 'admin' : isSubAdmin ? 'sub_admin' : undefined}
-                          currentUserIsAdmin={canModerate}
-                        >
-                          <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
-                            <AvatarImage src={message.profiles?.avatar_url || undefined} />
-                            <AvatarFallback>{message.profiles?.full_name?.[0] || "?"}</AvatarFallback>
-                          </Avatar>
-                        </UserProfilePopover>
-                      )}
-
-                      <div
-                        className={`rounded-2xl px-3 sm:px-4 py-2 ${isOwn
-                          ? "bg-primary !text-white rounded-br-none"
-                          : "bg-gray-100 text-gray-900 rounded-bl-none"
-                          } ${message.is_pending ? 'opacity-70' : ''}`}
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} group relative mb-2`}
+                >
+                  <div className={`flex items-end gap-2 max-w-[85%] sm:max-w-[70%] ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
+                    {!isOwn && (
+                      <UserProfilePopover
+                        userId={message.user_id}
+                        userName={message.profiles?.full_name || "User"}
+                        currentUserRole={isAdmin ? 'admin' : isSubAdmin ? 'sub_admin' : undefined}
+                        currentUserIsAdmin={canModerate}
                       >
-                        <div className="flex justify-between items-start gap-2">
-                          {!isOwn && (
-                            <UserProfilePopover
-                              userId={message.user_id}
-                              userName={message.profiles?.full_name || "User"}
-                              currentUserRole={isAdmin ? 'admin' : isSubAdmin ? 'sub_admin' : undefined}
-                              currentUserIsAdmin={canModerate}
-                            >
-                              <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
-                                <span className="text-xs font-semibold opacity-80">
-                                  {message.profiles?.full_name || "User"}
-                                </span>
-                                {message.isSeller && (
-                                  <BadgeCheck className="h-3 w-3 text-blue-500" />
-                                )}
-                              </button>
-                            </UserProfilePopover>
-                          )}
+                        <Avatar className="h-8 w-8 cursor-pointer hover:opacity-80 transition-opacity">
+                          <AvatarImage src={message.profiles?.avatar_url || undefined} />
+                          <AvatarFallback>{message.profiles?.full_name?.[0] || "?"}</AvatarFallback>
+                        </Avatar>
+                      </UserProfilePopover>
+                    )}
 
-                          {canDelete && !message.is_pending && (
+                    <div
+                      className={`rounded-2xl px-3 sm:px-4 py-2 ${isOwn
+                        ? "bg-primary !text-white rounded-br-none"
+                        : "bg-gray-100 text-gray-900 rounded-bl-none"
+                        } ${message.is_pending ? 'opacity-70' : ''}`}
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        {!isOwn && (
+                          <UserProfilePopover
+                            userId={message.user_id}
+                            userName={message.profiles?.full_name || "User"}
+                            currentUserRole={isAdmin ? 'admin' : isSubAdmin ? 'sub_admin' : undefined}
+                            currentUserIsAdmin={canModerate}
+                          >
+                            <button className="flex items-center gap-1 mb-1 hover:underline cursor-pointer">
+                              <span className="text-xs font-semibold opacity-80">
+                                {message.profiles?.full_name || "User"}
+                              </span>
+                              {message.isSeller && (
+                                <BadgeCheck className="h-3 w-3 text-blue-500" />
+                              )}
+                            </button>
+                          </UserProfilePopover>
+                        )}
+
+                        {canModerate && !message.is_pending && (
+                          <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded"
+                              className="p-1 hover:bg-black/10 rounded mr-1"
+                              onClick={() => handlePin(message)}
+                              title={message.is_pinned ? "Unpin message" : "Pin message"}
+                            >
+                              {message.is_pinned ? (
+                                <PinOff className="h-3 w-3" />
+                              ) : (
+                                <Pin className="h-3 w-3" />
+                              )}
+                            </button>
+                            <button
+                              className="p-1 hover:bg-black/10 rounded"
                               onClick={() => handleDelete(message.id)}
                               title="Delete message"
                             >
                               <Trash2 className="h-3 w-3" />
                             </button>
-                          )}
-                        </div>
-
-                        {renderMessageContent(message.content)}
-
-                        {message.media_uploads && message.media_uploads.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {message.media_uploads.map((media) => (
-                              <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
-                                {media.media_type === "image" ? (
-                                  <img
-                                    src={media.file_url}
-                                    alt="Uploaded"
-                                    className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
-                                  />
-                                ) : (
-                                  <video
-                                    src={media.file_url}
-                                    className="rounded-lg max-w-[300px] max-h-[200px]"
-                                    controls
-                                  />
-                                )}
-                              </div>
-                            ))}
                           </div>
                         )}
-
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs opacity-70">
-                            {new Date(message.created_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                          {message.is_pending && <span className="text-[10px] italic">Sending...</span>}
-                        </div>
-
-                        <MessageReactions messageId={message.id} userId={userId} />
                       </div>
+
+                      {renderMessageContent(message.content)}
+
+                      {message.media_uploads && message.media_uploads.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {message.media_uploads.map((media) => (
+                            <div key={media.id} className="cursor-pointer" onClick={() => setLightboxMedia({ url: media.file_url, type: media.media_type as "image" | "video" })}>
+                              {media.media_type === "image" ? (
+                                <img
+                                  src={media.file_url}
+                                  alt="Uploaded"
+                                  className="rounded-lg max-w-[300px] max-h-[200px] object-cover hover:opacity-90 transition-opacity"
+                                />
+                              ) : (
+                                <video
+                                  src={media.file_url}
+                                  className="rounded-lg max-w-[300px] max-h-[200px]"
+                                  controls
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs opacity-70">
+                          {new Date(message.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        {message.is_pending && <span className="text-[10px] italic">Sending...</span>}
+                      </div>
+
+                      <MessageReactions messageId={message.id} userId={userId} />
                     </div>
                   </div>
-                );
-              })
+                </div>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="border-t p-2 sm:p-4 space-y-2 sm:space-y-3 flex-shrink-0">
+          <div className="flex gap-1 sm:gap-2 flex-wrap">
+            {userId && (
+              <>
+                <MediaUpload
+                  groupId={groupId}
+                  userId={userId}
+                  type="image"
+                  disabled={quota.loading || quota.images.used >= quota.images.total}
+                  remainingQuota={quota.images.total - quota.images.used}
+                  onUploadComplete={refreshQuota}
+                  onMessageSent={handleOptimisticMessage}
+                />
+                <MediaUpload
+                  groupId={groupId}
+                  userId={userId}
+                  type="video"
+                  disabled={quota.loading || quota.videos.used >= quota.videos.total}
+                  remainingQuota={quota.videos.total - quota.videos.used}
+                  onUploadComplete={refreshQuota}
+                  onMessageSent={handleOptimisticMessage}
+                />
+                {isMainGroup && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1 sm:gap-2 text-xs"
+                    onClick={() => setShowCreateBid(true)}
+                  >
+                    <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Create Bid</span>
+                    <span className="sm:hidden">Bid</span>
+                  </Button>
+                )}
+              </>
             )}
-            <div ref={messagesEndRef} />
           </div>
-
-          <div className="border-t p-2 sm:p-4 space-y-2 sm:space-y-3 flex-shrink-0">
-            <div className="flex gap-1 sm:gap-2 flex-wrap">
-              {userId && (
-                <>
-                  <MediaUpload
-                    groupId={groupId}
-                    userId={userId}
-                    type="image"
-                    disabled={quota.loading || quota.images.used >= quota.images.total}
-                    remainingQuota={quota.images.total - quota.images.used}
-                    onUploadComplete={refreshQuota}
-                    onMessageSent={handleOptimisticMessage}
-                  />
-                  <MediaUpload
-                    groupId={groupId}
-                    userId={userId}
-                    type="video"
-                    disabled={quota.loading || quota.videos.used >= quota.videos.total}
-                    remainingQuota={quota.videos.total - quota.videos.used}
-                    onUploadComplete={refreshQuota}
-                    onMessageSent={handleOptimisticMessage}
-                  />
-                  {isMainGroup && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-1 sm:gap-2 text-xs"
-                      onClick={() => setShowCreateBid(true)}
-                    >
-                      <Gavel className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="hidden sm:inline">Create Bid</span>
-                      <span className="sm:hidden">Bid</span>
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Textarea
-                placeholder="Type your message..."
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="min-h-[60px] sm:min-h-[80px] resize-none text-sm"
-                maxLength={5000}
-              />
-              <Button onClick={handleSend} disabled={!newMessage.trim()} size="icon" className="flex-shrink-0 h-[60px] w-[60px] sm:h-[80px] sm:w-[80px]">
-                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
-              </Button>
-            </div>
+          <div className="flex gap-2">
+            <Textarea
+              placeholder="Type your message..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="min-h-[60px] sm:min-h-[80px] resize-none text-sm"
+              maxLength={5000}
+            />
+            <Button onClick={handleSend} disabled={!newMessage.trim()} size="icon" className="flex-shrink-0 h-[60px] w-[60px] sm:h-[80px] sm:w-[80px]">
+              <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
           </div>
-        </TabsContent>
+        </div>
+      </TabsContent>
 
-        <TabsContent value="bidding" className="flex-1 overflow-y-auto p-4 m-0">
-          {userId && isMainGroup && <BiddingPanel groupId={groupId} userId={userId} />}
-        </TabsContent>
-      </Tabs>
+      <TabsContent value="bidding" className="flex-1 overflow-y-auto p-4 m-0">
+        {userId && isMainGroup && <BiddingPanel groupId={groupId} userId={userId} />}
+      </TabsContent>
+    </Tabs>
 
-      {userId && (
-        <React.Fragment>
-          <CreateBidDialog
-            groupId={groupId}
-            userId={userId}
-            isOpen={showCreateBid}
-            onClose={() => setShowCreateBid(false)}
-            onRequestSeller={onRequestSeller}
-          />
-          <LinkSafetyDialog
-            isOpen={showLinkSafety}
-            onClose={() => setShowLinkSafety(false)}
-            onConfirm={handleConfirmLink}
-          />
-        </React.Fragment>
-      )}
-
-      {lightboxMedia && (
-        <MediaLightbox
-          mediaUrl={lightboxMedia.url}
-          mediaType={lightboxMedia.type}
-          isOpen={!!lightboxMedia}
-          onClose={() => setLightboxMedia(null)}
+      {
+    userId && (
+      <React.Fragment>
+        <CreateBidDialog
+          groupId={groupId}
+          userId={userId}
+          isOpen={showCreateBid}
+          onClose={() => setShowCreateBid(false)}
+          onRequestSeller={onRequestSeller}
         />
-      )}
-    </Card>
+        <LinkSafetyDialog
+          isOpen={showLinkSafety}
+          onClose={() => setShowLinkSafety(false)}
+          onConfirm={handleConfirmLink}
+        />
+      </React.Fragment>
+    )
+  }
+
+  {
+    lightboxMedia && (
+      <MediaLightbox
+        mediaUrl={lightboxMedia.url}
+        mediaType={lightboxMedia.type}
+        isOpen={!!lightboxMedia}
+        onClose={() => setLightboxMedia(null)}
+      />
+    )
+  }
+    </Card >
   );
 };
