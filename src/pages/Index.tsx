@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Shield, Store, UserPlus, User, LayoutTemplate, BarChart3, Menu, X } from "lucide-react";
+import { LogOut, Shield, Store, UserPlus, User, LayoutTemplate, BarChart3, Menu, X, Users, Target, FileText, ShieldAlert, Handshake } from "lucide-react";
 import { GroupList } from "@/components/chat/GroupList";
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { AdvertDashboard } from "@/components/dashboard/AdvertDashboard";
@@ -235,17 +235,74 @@ const Index = () => {
                     </Button>
 
                     {isAdmin && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          navigate("/admin/cms");
-                          setProfileSheetOpen(false);
-                        }}
-                        className="justify-start gap-2 h-12"
-                      >
-                        <LayoutTemplate className="h-5 w-5" />
-                        Admin Dashboard
-                      </Button>
+                      <>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/cms");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <LayoutTemplate className="h-5 w-5" />
+                          Admin Dashboard
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/users");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <Users className="h-5 w-5" />
+                          User Management
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/pledges");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <Target className="h-5 w-5" />
+                          Pledge Tracking
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/commitments");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <Handshake className="h-5 w-5" />
+                          Commitment Analysis
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/reports");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <FileText className="h-5 w-5" />
+                          System Reports
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            navigate("/admin/ban-requests");
+                            setProfileSheetOpen(false);
+                          }}
+                          className="justify-start gap-2 h-12"
+                        >
+                          <ShieldAlert className="h-5 w-5" />
+                          Ban Requests
+                        </Button>
+                      </>
                     )}
 
                     <Button
