@@ -19,7 +19,7 @@ export const useProfileCompletion = () => {
 
             const { data: profile, error } = await (supabase as any)
                 .from("profiles")
-                .select("full_name, phone_number, years_in_yard, area_council, town, avatar_url, commitment_followup_scale, commitment_financial_scale")
+                .select("full_name, phone_number, years_in_yard, area_council, town, avatar_url, commitment_followup_scale, commitment_financial_scale, volunteering_capacity")
                 .eq("id", session.user.id)
                 .single();
 
@@ -38,6 +38,7 @@ export const useProfileCompletion = () => {
                 profileData.area_council &&
                 profileData.town &&
                 profileData.avatar_url &&
+                profileData.volunteering_capacity &&
                 (profileData.commitment_followup_scale !== null || profileData.commitment_financial_scale !== null)
             );
 

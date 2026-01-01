@@ -139,10 +139,42 @@ const Auth = () => {
         return;
       }
 
-      if (!isLogin && !confirmationAgreement) {
-        toast.error("You must confirm the agreement to sign up.");
-        setLoading(false);
-        return;
+      if (!isLogin) {
+        if (!yearsInYard) {
+          toast.error("Please select number of years in the Yard");
+          setLoading(false);
+          return;
+        }
+        if (!areaCouncil) {
+          toast.error("Please select your Area Council");
+          setLoading(false);
+          return;
+        }
+        if (!town) {
+          toast.error("Please select your Town");
+          setLoading(false);
+          return;
+        }
+        if (commitmentFollowup === undefined) {
+          toast.error("Please select your willingness to follow-up");
+          setLoading(false);
+          return;
+        }
+        if (commitmentFinancial === undefined) {
+          toast.error("Please select your financial commitment scale");
+          setLoading(false);
+          return;
+        }
+        if (!volunteeringCapacity) {
+          toast.error("Please select your volunteering capacity");
+          setLoading(false);
+          return;
+        }
+        if (!confirmationAgreement) {
+          toast.error("You must confirm the agreement to sign up.");
+          setLoading(false);
+          return;
+        }
       }
 
       if (isLogin) {

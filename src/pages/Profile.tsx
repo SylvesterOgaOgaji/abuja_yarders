@@ -264,6 +264,16 @@ export default function Profile() {
       return;
     }
 
+    if (!volunteeringCapacity) {
+      toast.error("Please select your volunteering capacity.");
+      return;
+    }
+
+    if (volunteeringCapacity === 'other' && !volunteeringOtherDescription.trim()) {
+      toast.error("Please specify your volunteering capacity.");
+      return;
+    }
+
     setSaving(true);
 
     const selectedCouncil = AREA_COUNCILS.find(c => c.id === areaCouncil);
