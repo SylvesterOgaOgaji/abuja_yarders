@@ -254,6 +254,26 @@ export default function Profile() {
       return;
     }
 
+    if (!phoneNumber.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+
+    if (!yearsInYard) {
+      toast.error("Please select years in the yard");
+      return;
+    }
+
+    if (!areaCouncil) {
+      toast.error("Please select your area council");
+      return;
+    }
+
+    if (!town) {
+      toast.error("Please select your town");
+      return;
+    }
+
     if (!avatarUrl) {
       toast.error("Profile photo is compulsory. Please upload one.");
       return;
