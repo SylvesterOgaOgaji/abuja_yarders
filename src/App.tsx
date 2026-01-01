@@ -11,6 +11,7 @@ import { initializeRevenueCat } from "@/services/inAppPurchase";
 import { App as AppPlugin } from "@capacitor/app"; // Import App plugin
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import UpdatePassword from "./pages/UpdatePassword";
 import SellerProfile from "./pages/SellerProfile";
 import DashboardCMS from "./pages/admin/DashboardCMS";
 import PledgeTracking from "@/pages/admin/PledgeTracking";
@@ -45,6 +46,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/auth/update-password" element={<UpdatePassword />} />
       <Route path="/seller/:userId" element={<SellerProfile />} />
       <Route path="/admin/cms" element={<DashboardCMS />} />
       <Route path="/admin/pledges" element={<PledgeTracking />} />

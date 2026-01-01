@@ -110,7 +110,7 @@ const Auth = () => {
     try {
       if (isResetPassword) {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin + '/auth/update-password',
+          redirectTo: 'https://tipabujayarders.pages.dev/auth/update-password',
         });
         if (error) throw error;
         toast.success("Check your email for the password reset link");
