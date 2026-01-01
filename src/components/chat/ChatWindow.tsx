@@ -283,7 +283,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
       // Find pinned message (last one pinned if multiple, or simple find)
       // Assuming only one pinned message is relevant at the top, or specifically managed. 
       // We'll take the first one we find for now.
-      const pinned = messagesWithProfiles.find(m => m.is_pinned);
+      const pinned = messagesWithProfiles.find(m => (m as any).is_pinned);
       setPinnedMessage(pinned as any || null);
     } else {
       setMessages([]);
@@ -602,7 +602,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                           )}
 
                           {canModerate && !message.is_pending && (
-                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                            <div className="flex items-center ml-2">
                               <button
                                 className="p-1 hover:bg-black/10 rounded mr-1"
                                 onClick={() => handlePin(message)}
@@ -625,7 +625,7 @@ export const ChatWindow = ({ groupId, onRequestSeller, onClose }: ChatWindowProp
                           )}
                           {!canModerate && canDelete && !message.is_pending && (
                             <button
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded ml-2"
+                              className="p-1 hover:bg-black/10 rounded ml-2"
                               onClick={() => handleDelete(message.id)}
                               title="Delete message"
                             >

@@ -17,9 +17,9 @@ export const useProfileCompletion = () => {
                 return;
             }
 
-            const { data: profile, error } = await supabase
+            const { data: profile, error } = await (supabase as any)
                 .from("profiles")
-                .select("full_name, phone_number, years_in_yard, area_council, town, avatar_url")
+                .select("full_name, phone_number, years_in_yard, area_council, town, avatar_url, commitment_followup_scale, commitment_financial_scale")
                 .eq("id", session.user.id)
                 .single();
 
@@ -29,51 +29,27 @@ export const useProfileCompletion = () => {
                 return;
             }
 
+            const profileData = profile as any;
+
             const isComplete = Boolean(
-                profile.full_name &&
-                profile.phone_number &&
-                profile.years_in_yard &&
-                profile.area_council &&
-                profile.town &&
-                profile.avatar_url
+                profileData.full_name &&
+                profileData.phone_number &&
+                profileData.years_in_yard &&
+                profileData.area_council &&
+                profileData.town &&
+                profileData.avatar_url &&
+                (profileData.commitment_followup_scale !== null || profileData.commitment_financial_scale !== null)
             );
 
             setIsProfileComplete(isComplete);
             setLoading(false);
 
-            if (!isComplete && location.pathname !== "/profile" && location.pathname !== "/auth") {
-                toast.warning("Incomplete Profile", {
-                    description: "Please complete your profile to continue using the app. You need to fill all fields and upload a profile picture.",
-                    duration: 5000,
-                    action: {
-                        label: "Go to Profile",
-                        onClick: () => navigate("/profile"),
-                    },
+            if (!isComplete && location.pathname !== "/profile" && location.pathname !== "/auth" && location.pathname !== "/auth/update-password") {
+                toast.error("Profile Activation Required", {
+                    description: "You must complete your profile (Photo + Commitment Level) to access the platform.",
+                    duration: 10000,
                 });
-
-                // Create persistent notification if not exists
-                const createPersistentNotification = async () => {
-                    // @ts-ignore
-                    const { data: existing } = await (supabase as any)
-                        .from('notifications')
-                        .select('id')
-                        .eq('user_id', session.user.id)
-                        .eq('type', 'profile')
-                        .eq('is_read', false)
-                        .limit(1);
-
-                    if (!existing || existing.length === 0) {
-                        // @ts-ignore
-                        await (supabase as any).from('notifications').insert({
-                            user_id: session.user.id,
-                            title: 'Incomplete Profile',
-                            message: 'Your profile is incomplete. Please update your details and uploading a photo to access all features.',
-                            type: 'profile',
-                            action_link: '/profile'
-                        });
-                    }
-                };
-                createPersistentNotification();
+                navigate("/profile", { replace: true });
             }
         };
 

@@ -254,6 +254,16 @@ export default function Profile() {
       return;
     }
 
+    if (!avatarUrl) {
+      toast.error("Profile photo is compulsory. Please upload one.");
+      return;
+    }
+
+    if (commitmentFollowup === undefined && commitmentFinancial === undefined) {
+      toast.error("Please select at least one commitment level (Follow-up or Financial).");
+      return;
+    }
+
     setSaving(true);
 
     const selectedCouncil = AREA_COUNCILS.find(c => c.id === areaCouncil);
@@ -300,17 +310,21 @@ export default function Profile() {
     );
   }
 
+  const isProfileComplete = avatarUrl && (commitmentFollowup !== undefined || commitmentFinancial !== undefined);
+
   return (
     <div className="min-h-screen bg-primary p-4">
       <div className="max-w-2xl mx-auto space-y-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="gap-2 text-primary-foreground hover:bg-secondary/20"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
+        {isProfileComplete && (
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            className="gap-2 text-primary-foreground hover:bg-secondary/20"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        )}
 
         <Card className="bg-secondary">
           <CardHeader className="text-center">
