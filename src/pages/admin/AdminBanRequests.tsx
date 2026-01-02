@@ -153,28 +153,30 @@ const AdminBanRequests = () => {
                                 </div>
                                 <div className="flex gap-3 justify-end items-center">
                                     {isSubAdmin && (
-                                        <div className="text-xs text-muted-foreground mr-2 italic">
-                                            Sub-Admins have view-only access.
+                                        <div className="text-xs text-muted-foreground mr-2 italic bg-secondary/50 px-2 py-1 rounded">
+                                            View Only Access (Sub-Admin)
                                         </div>
                                     )}
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleAction(request.id, 'reject', request.target_user_id)}
-                                        className="gap-1"
-                                        disabled={!isAdmin}
-                                    >
-                                        <X className="h-4 w-4" /> Reject
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        onClick={() => handleAction(request.id, 'approve', request.target_user_id)}
-                                        className="gap-1"
-                                        disabled={!isAdmin}
-                                    >
-                                        <Check className="h-4 w-4" /> Approve & Ban
-                                    </Button>
+                                    {isAdmin && (
+                                        <>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleAction(request.id, 'reject', request.target_user_id)}
+                                                className="gap-1"
+                                            >
+                                                <X className="h-4 w-4" /> Reject
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => handleAction(request.id, 'approve', request.target_user_id)}
+                                                className="gap-1"
+                                            >
+                                                <Check className="h-4 w-4" /> Approve & Ban
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>

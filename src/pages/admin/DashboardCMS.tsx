@@ -80,13 +80,18 @@ export default function DashboardCMS() {
     const [newGroup, setNewGroup] = useState<Partial<TownGroup>>({ is_active: true });
 
     useEffect(() => {
-        checkUserRole();
-        fetchData();
+        const init = async () => {
+            setLoading(true);
+            const role = await checkUserRole();
+            await fetchData(role);
+            setLoading(false);
+        };
+        init();
     }, []);
 
     const checkUserRole = async () => {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!user) return null;
         const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
         if (data) {
             const role = data.role as 'admin' | 'sub_admin';
@@ -94,12 +99,22 @@ export default function DashboardCMS() {
             if (role === 'sub_admin') {
                 setActiveTab('calls');
             }
+            return role;
         }
+        return null;
     };
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (role: 'admin' | 'sub_admin' | null) => {
         try {
+            // Only fetch Calls for Sub-Admins
+            if (role === 'sub_admin') {
+                const { data: callsData, error } = await supabase.from("support_calls").select("*").order("created_at", { ascending: false });
+                if (error) throw error;
+                setActiveCalls(callsData || []);
+                return;
+            }
+
+            // Fetch All for Admins
             const [contentRes, excoRes, callsRes, groupsRes] = await Promise.all([
                 supabase.from("dashboard_content").select("*").order("key"),
                 supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
@@ -115,12 +130,10 @@ export default function DashboardCMS() {
             setContentItems(contentRes.data || []);
             setExcoMembers(excoRes.data || []);
             setActiveCalls(callsRes.data || []);
-            setGroups(groupsRes.data as any || []); // Type cast as any to flexible map pending types regen
+            setGroups(groupsRes.data as any || []);
         } catch (error) {
             console.error("Error fetching CMS data:", error);
             toast.error("Failed to load CMS data");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -232,7 +245,7 @@ export default function DashboardCMS() {
             setIsExcoDialogOpen(false);
             setEditingExco(null);
             setNewMember({ display_order: 0 });
-            fetchData(); // Refresh list
+            fetchData(userRole); // Refresh list
         } catch (error) {
             console.error("Error saving exco member:", error);
             toast.error("Failed to save member");
@@ -306,7 +319,7 @@ export default function DashboardCMS() {
             setIsCallDialogOpen(false);
             setEditingCall(null);
             setNewCall({ urgency: "medium", category: "other", is_active: true });
-            fetchData();
+            fetchData(userRole);
         } catch (error) {
             console.error("Error saving call:", error);
             toast.error("Failed to save call");
@@ -371,7 +384,7 @@ export default function DashboardCMS() {
             setIsGroupDialogOpen(false);
             setEditingGroup(null);
             setNewGroup({ is_active: true });
-            fetchData();
+            fetchData(userRole);
         } catch (error) {
             console.error(error);
             toast.error("Failed to save group");
