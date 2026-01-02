@@ -88,7 +88,13 @@ export default function DashboardCMS() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-        if (data) setUserRole(data.role as 'admin' | 'sub_admin');
+        if (data) {
+            const role = data.role as 'admin' | 'sub_admin';
+            setUserRole(role);
+            if (role === 'sub_admin') {
+                setActiveTab('calls');
+            }
+        }
     };
 
     const fetchData = async () => {
@@ -419,11 +425,11 @@ export default function DashboardCMS() {
                                 value={activeTab}
                                 onChange={(e) => setActiveTab(e.target.value)}
                             >
-                                <option value="content">Content & Text</option>
-                                <option value="exco">Exco Members</option>
+                                {userRole === 'admin' && <option value="content">Content & Text</option>}
+                                {userRole === 'admin' && <option value="exco">Exco Members</option>}
                                 <option value="calls">Active Calls</option>
-                                <option value="groups">Towns / Groups</option>
-                                <option value="legal">Legal & Policies</option>
+                                {userRole === 'admin' && <option value="groups">Towns / Groups</option>}
+                                {userRole === 'admin' && <option value="legal">Legal & Policies</option>}
                             </select>
                             {/* Chevron Icon */}
                             <div className="absolute right-3 top-3 pointer-events-none">
@@ -436,11 +442,19 @@ export default function DashboardCMS() {
 
                     {/* Desktop Navigation (Tabs) */}
                     <TabsList className="hidden md:grid w-full grid-cols-5 h-auto py-2">
-                        <TabsTrigger value="content" className="py-2">Content & Text</TabsTrigger>
-                        <TabsTrigger value="exco" className="py-2">Exco Members</TabsTrigger>
+                        {userRole === 'admin' && (
+                            <>
+                                <TabsTrigger value="content" className="py-2">Content & Text</TabsTrigger>
+                                <TabsTrigger value="exco" className="py-2">Exco Members</TabsTrigger>
+                            </>
+                        )}
                         <TabsTrigger value="calls" className="py-2">Active Calls</TabsTrigger>
-                        <TabsTrigger value="groups" className="py-2">Towns / Groups</TabsTrigger>
-                        <TabsTrigger value="legal" className="py-2" disabled={userRole === 'sub_admin'}>Legal & Policies {userRole === 'sub_admin' && '(Admin Only)'}</TabsTrigger>
+                        {userRole === 'admin' && (
+                            <>
+                                <TabsTrigger value="groups" className="py-2">Towns / Groups</TabsTrigger>
+                                <TabsTrigger value="legal" className="py-2">Legal & Policies</TabsTrigger>
+                            </>
+                        )}
                     </TabsList>
 
                     {userRole === 'sub_admin' && (
