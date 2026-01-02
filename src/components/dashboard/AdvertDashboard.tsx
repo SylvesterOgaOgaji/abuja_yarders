@@ -146,7 +146,52 @@ export const AdvertDashboard = () => {
 
 
                     {/* Hero / Upcoming Programs */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Notifications Banner (Pledges) */}
+                    {notifications.filter(n => n.type === 'pledge_reminder' || n.title?.toLowerCase().includes('pledge')).map(notification => (
+                        <div key={notification.id} className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-4 md:p-5 flex flex-col md:flex-row items-start gap-4 shadow-sm relative animate-in fade-in slide-in-from-top-4 duration-500">
+                            <div className="p-3 bg-amber-100 dark:bg-amber-900/50 rounded-full text-amber-600 dark:text-amber-500 shrink-0">
+                                <HandHeart className="h-6 w-6" />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                                <div>
+                                    <h3 className="font-bold text-lg text-amber-900 dark:text-amber-100 flex items-center gap-2">
+                                        {notification.title}
+                                        <Badge variant="outline" className="text-[10px] border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-100/50">Action Required</Badge>
+                                    </h3>
+                                    <p className="text-amber-800/90 dark:text-amber-200/80 text-sm leading-relaxed max-w-2xl">
+                                        {notification.message}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        size="sm"
+                                        className="bg-amber-600 hover:bg-amber-700 text-white border-none shadow-md"
+                                        onClick={() => window.location.href = '/pledges'}
+                                    >
+                                        Redeem Pledge Now
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="border-amber-600/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                                        onClick={() => dismissNotification(notification.id)}
+                                    >
+                                        Remind Me Later
+                                    </Button>
+                                </div>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 absolute top-2 right-2 text-amber-400 hover:text-amber-600 hover:bg-amber-100/50 rounded-full"
+                                onClick={() => dismissNotification(notification.id)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <Card
                             className={`md:col-span-2 text-primary-foreground border-none overflow-hidden relative shadow-lg group hover:shadow-xl transition-all ${!content["featured_image_url"] ? "bg-gradient-to-r from-primary/90 to-primary" : "bg-black"}`}
                         >
