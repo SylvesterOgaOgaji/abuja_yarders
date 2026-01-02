@@ -59,12 +59,14 @@ export const AdvertDashboard = () => {
                 const { data: { user } } = await supabase.auth.getUser();
                 setUserId(user?.id || null);
 
+                if (!user) return; // Ensure user exists before extensive fetching
+
                 const [contentResult, excoResult, profilesResult, callsResult, notificationsResult] = await Promise.all([
                     supabase.from("dashboard_content").select("key, value"),
                     supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
                     supabase.from("profiles").select("id, full_name, avatar_url, birth_day, birth_month").gt('birth_day', 0),
                     supabase.from("support_calls").select("*").eq("is_active", true).order("urgency", { ascending: false }).order("created_at", { ascending: false }),
-                    supabase.from("notifications" as any).select("*").eq("is_read", false).order("created_at", { ascending: false })
+                    supabase.from("notifications" as any).select("*").eq("user_id", user.id).eq("is_read", false).order("created_at", { ascending: false })
                 ]);
 
                 if (contentResult.data) {

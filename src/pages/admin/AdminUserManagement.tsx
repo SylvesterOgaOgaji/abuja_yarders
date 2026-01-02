@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,22 @@ import { CreateSubAdminDialog } from "@/components/admin/CreateSubAdminDialog";
 export default function AdminUserManagement() {
     const [sellerRequestsOpen, setSellerRequestsOpen] = useState(false);
     const [addSellerDialogOpen, setAddSellerDialogOpen] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    // Fetch role on mount
+    const checkRole = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').single();
+            if (data) setIsAdmin(true);
+        }
+    };
+    useState(() => { checkRole(); });
+
+    // Simple wrapper for cleaner JSX below (optional, or just use variable)
+    const AdminRoleGuard = ({ children }: { children: React.ReactNode }) => {
+        return isAdmin ? <>{children}</> : null;
+    };
 
     return (
         <AdminLayout>
@@ -66,16 +83,22 @@ export default function AdminUserManagement() {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Sub-Admins</CardTitle>
-                            <Shield className="h-4 w-4 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <CardDescription className="mb-4">Create new sub-admins and manage permissions.</CardDescription>
-                            <CreateSubAdminDialog />
-                        </CardContent>
-                    </Card>
+                    {/* Only Show Sub-Admin Management to Full Admins */}
+                    {/* Check if we have the role loaded? We might need to fetch it in this component actually. */}
+                    {/* Let's assume we can fetch it or pass it. This component doesn't have `userRole` state yet. */}
+                    {/* I'll add the fetch logic above and then use it here. */}
+                    <AdminRoleGuard>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Sub-Admins</CardTitle>
+                                <Shield className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription className="mb-4">Create new sub-admins and manage permissions.</CardDescription>
+                                <CreateSubAdminDialog />
+                            </CardContent>
+                        </Card>
+                    </AdminRoleGuard>
                 </div>
 
                 {/* Dialogs */}
