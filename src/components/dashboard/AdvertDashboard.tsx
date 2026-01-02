@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PledgeDialog } from "./PledgeDialog";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardContent {
     [key: string]: string;
@@ -42,6 +43,7 @@ interface SupportCall {
 }
 
 export const AdvertDashboard = () => {
+    const navigate = useNavigate();
     const [content, setContent] = useState<DashboardContent>({});
     const [exco, setExco] = useState<ExcoMember[]>([]);
     const [birthdays, setBirthdays] = useState<BirthdayProfile[]>([]);
@@ -166,7 +168,7 @@ export const AdvertDashboard = () => {
                                     <Button
                                         size="sm"
                                         className="bg-amber-600 hover:bg-amber-700 text-white border-none shadow-md"
-                                        onClick={() => window.location.href = '/pledges'}
+                                        onClick={() => navigate('/pledges')}
                                     >
                                         Redeem Pledge Now
                                     </Button>
