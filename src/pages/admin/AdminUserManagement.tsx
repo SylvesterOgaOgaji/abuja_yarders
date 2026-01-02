@@ -18,7 +18,7 @@ export default function AdminUserManagement() {
     const checkRole = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-            const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').single();
+            const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
             if (data) setIsAdmin(true);
         }
     };
