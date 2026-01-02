@@ -92,14 +92,21 @@ export default function DashboardCMS() {
     const checkUserRole = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return null;
-        const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
-        if (data) {
-            const role = data.role as 'admin' | 'sub_admin';
-            setUserRole(role);
-            if (role === 'sub_admin') {
-                setActiveTab('calls');
+
+        const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+
+        if (data && data.length > 0) {
+            const roles = data.map(r => r.role);
+            // Prioritize Admin
+            if (roles.includes('admin')) {
+                setUserRole('admin');
+                return 'admin';
             }
-            return role;
+            if (roles.includes('sub_admin')) {
+                setUserRole('sub_admin');
+                setActiveTab('calls');
+                return 'sub_admin';
+            }
         }
         return null;
     };
@@ -476,116 +483,119 @@ export default function DashboardCMS() {
                         </div>
                     )}
 
-                    <TabsContent value="content" className="space-y-4 mt-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Dashboard Texts & Links</CardTitle>
-                                <CardDescription>Manage welcome messages, resource links, organization info, and announcements.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-8">
-                                {/* Group: Hero Section */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Hero Section</h3>
-                                    {contentItems.filter(i => i.key.startsWith('hero_')).map(item => (
-                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                    ))}
-                                </div>
-
-                                {/* Group: Featured Event */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Featured Event</h3>
-                                    {contentItems.filter(i => i.key.startsWith('featured_')).map(item => (
-                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                    ))}
-                                </div>
-
-                                {/* Group: Announcements */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Announcements</h3>
-                                    {contentItems.filter(i => i.key.startsWith('announcement_') || i.key === 'special_notice_link').map(item => (
-                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                    ))}
-                                </div>
-
-                                {/* Group: Mission/Vision */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Mission & Vision</h3>
-                                    {contentItems.filter(i => i.key.endsWith('_text') && !i.key.startsWith('announcement')).map(item => (
-                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                    ))}
-                                </div>
-
-                                {/* Group: Resources & Policies */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Resources & Policies</h3>
-                                    {contentItems.filter(i => i.key === 'policy_document_url' || i.key === 'policy_title' || i.key === 'pledge_reason_text').map(item => (
-                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                    ))}
-                                </div>
-
-                                {/* Fallback for others */}
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Other Content</h3>
-                                    {contentItems.filter(i =>
-                                        !i.key.startsWith('hero_') &&
-                                        !i.key.startsWith('featured_') &&
-                                        !i.key.startsWith('announcement_') &&
-                                        i.key !== 'special_notice_link' &&
-                                        !i.key.endsWith('_text') &&
-                                        i.key !== 'policy_document_url' &&
-                                        i.key !== 'policy_title' &&
-                                        i.key !== 'pledge_reason_text'
-                                    ).map(item => (
-                                        <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-
-                    <TabsContent value="exco" className="space-y-4 mt-4">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-semibold">Exco Team</h2>
-                            <Button
-                                onClick={() => { setEditingExco(null); setIsExcoDialogOpen(true); }}
-                                disabled={userRole === 'sub_admin'}
-                            >
-                                <Plus className="mr-2 h-4 w-4" /> Add Member
-                            </Button>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {excoMembers.map((member) => (
-                                <Card key={member.id} className="relative">
-                                    <CardHeader className="flex flex-row items-center gap-4 pb-2">
-                                        <div className="h-12 w-12 rounded-full overflow-hidden bg-secondary">
-                                            {member.image_url ? (
-                                                <img src={member.image_url} alt={member.name} className="h-full w-full object-cover" />
-                                            ) : (
-                                                <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">No img</div>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-base">{member.name}</CardTitle>
-                                            <CardDescription>{member.role}</CardDescription>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground line-clamp-2">{member.bio}</p>
-                                        <div className="mt-2 text-xs font-mono bg-secondary/50 p-1 rounded w-fit">Order: {member.display_order}</div>
-                                    </CardContent>
-                                    <div className="absolute top-2 right-2 flex gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExco(member); setIsExcoDialogOpen(true); }} disabled={userRole === 'sub_admin'}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteExcoMember(member.id)} disabled={userRole === 'sub_admin'}>
-                                            <Trash className="h-4 w-4" />
-                                        </Button>
+                    {userRole === 'admin' && (
+                        <TabsContent value="content" className="space-y-4 mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Dashboard Texts & Links</CardTitle>
+                                    <CardDescription>Manage welcome messages, resource links, organization info, and announcements.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
+                                    {/* Group: Hero Section */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Hero Section</h3>
+                                        {contentItems.filter(i => i.key.startsWith('hero_')).map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))}
                                     </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </TabsContent>
+
+                                    {/* Group: Featured Event */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Featured Event</h3>
+                                        {contentItems.filter(i => i.key.startsWith('featured_')).map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))}
+                                    </div>
+
+                                    {/* Group: Announcements */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Announcements</h3>
+                                        {contentItems.filter(i => i.key.startsWith('announcement_') || i.key === 'special_notice_link').map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))}
+                                    </div>
+
+                                    {/* Group: Mission/Vision */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Mission & Vision</h3>
+                                        {contentItems.filter(i => i.key.endsWith('_text') && !i.key.startsWith('announcement')).map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))}
+                                    </div>
+
+                                    {/* Group: Resources & Policies */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Resources & Policies</h3>
+                                        {contentItems.filter(i => i.key === 'policy_document_url' || i.key === 'policy_title' || i.key === 'pledge_reason_text').map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))}
+                                    </div>
+
+                                    {/* Fallback for others */}
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Other Content</h3>
+                                        {contentItems.filter(i =>
+                                            !i.key.startsWith('hero_') &&
+                                            !i.key.startsWith('featured_') &&
+                                            !i.key.startsWith('announcement_') &&
+                                            i.key !== 'special_notice_link' &&
+                                            !i.key.endsWith('_text') &&
+                                            i.key !== 'policy_document_url' &&
+                                            i.key !== 'policy_title' &&
+                                            i.key !== 'pledge_reason_text'
+                                        ).map(item => (
+                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    )}
+
+                    {userRole === 'admin' && (
+                        <TabsContent value="exco" className="space-y-4 mt-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semibold">Exco Team</h2>
+                                <Button
+                                    onClick={() => { setEditingExco(null); setIsExcoDialogOpen(true); }}
+                                >
+                                    <Plus className="mr-2 h-4 w-4" /> Add Member
+                                </Button>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                {excoMembers.map((member) => (
+                                    <Card key={member.id} className="relative">
+                                        <CardHeader className="flex flex-row items-center gap-4 pb-2">
+                                            <div className="h-12 w-12 rounded-full overflow-hidden bg-secondary">
+                                                {member.image_url ? (
+                                                    <img src={member.image_url} alt={member.name} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">No img</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-base">{member.name}</CardTitle>
+                                                <CardDescription>{member.role}</CardDescription>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground line-clamp-2">{member.bio}</p>
+                                            <div className="mt-2 text-xs font-mono bg-secondary/50 p-1 rounded w-fit">Order: {member.display_order}</div>
+                                        </CardContent>
+                                        <div className="absolute top-2 right-2 flex gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExco(member); setIsExcoDialogOpen(true); }}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteExcoMember(member.id)}>
+                                                <Trash className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </TabsContent>
+                    )}
 
                     <TabsContent value="calls" className="space-y-4 mt-4">
                         <div className="flex justify-between items-center">
@@ -635,58 +645,62 @@ export default function DashboardCMS() {
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="groups" className="space-y-4 mt-4">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-semibold">Towns & Groups Management</h2>
-                            <Button onClick={() => { setEditingGroup(null); setIsGroupDialogOpen(true); }} disabled={userRole === 'sub_admin'}>
-                                <Plus className="mr-2 h-4 w-4" /> Add Town Group
-                            </Button>
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {groups.map((group) => (
-                                <Card key={group.id} className={`relative ${group.is_active ? '' : 'opacity-60 bg-muted/50'}`}>
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-base">{group.name}</CardTitle>
-                                        <CardDescription>{group.area_council}</CardDescription>
-                                    </CardHeader>
-                                    <div className="absolute top-2 right-2 flex gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleGroupActive(group)} title={group.is_active ? "Deactivate" : "Activate"} disabled={userRole === 'sub_admin'}>
-                                            {group.is_active ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingGroup(group); setIsGroupDialogOpen(true); }} disabled={userRole === 'sub_admin'}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteGroup(group.id)} disabled={userRole === 'sub_admin'}>
-                                            <Trash className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="legal" className="space-y-4 mt-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Legal Pages & Policy Content</CardTitle>
-                                <CardDescription>Manage text for Terms, Privacy Policy, and Contact Information.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-8">
-                                <div className="space-y-4">
-                                    <h3 className="font-semibold text-lg border-b pb-2">Policy Documents</h3>
-                                    {contentItems.filter(i => i.key.startsWith('legal_')).length > 0 ? (
-                                        contentItems.filter(i => i.key.startsWith('legal_')).map(item => (
-                                            <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-8 text-muted-foreground">
-                                            <p>No legal content keys found. Please run the migration to add them.</p>
+                    {userRole === 'admin' && (
+                        <TabsContent value="groups" className="space-y-4 mt-4">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semibold">Towns & Groups Management</h2>
+                                <Button onClick={() => { setEditingGroup(null); setIsGroupDialogOpen(true); }}>
+                                    <Plus className="mr-2 h-4 w-4" /> Add Town Group
+                                </Button>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {groups.map((group) => (
+                                    <Card key={group.id} className={`relative ${group.is_active ? '' : 'opacity-60 bg-muted/50'}`}>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-base">{group.name}</CardTitle>
+                                            <CardDescription>{group.area_council}</CardDescription>
+                                        </CardHeader>
+                                        <div className="absolute top-2 right-2 flex gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleGroupActive(group)} title={group.is_active ? "Deactivate" : "Activate"}>
+                                                {group.is_active ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingGroup(group); setIsGroupDialogOpen(true); }}>
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteGroup(group.id)}>
+                                                <Trash className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </TabsContent>
+                    )}
+
+                    {userRole === 'admin' && (
+                        <TabsContent value="legal" className="space-y-4 mt-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Legal Pages & Policy Content</CardTitle>
+                                    <CardDescription>Manage text for Terms, Privacy Policy, and Contact Information.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-8">
+                                    <div className="space-y-4">
+                                        <h3 className="font-semibold text-lg border-b pb-2">Policy Documents</h3>
+                                        {contentItems.filter(i => i.key.startsWith('legal_')).length > 0 ? (
+                                            contentItems.filter(i => i.key.startsWith('legal_')).map(item => (
+                                                <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-muted-foreground">
+                                                <p>No legal content keys found. Please run the migration to add them.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
 
@@ -913,7 +927,7 @@ export default function DashboardCMS() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </AdminLayout>
+        </AdminLayout >
     );
 }
 
