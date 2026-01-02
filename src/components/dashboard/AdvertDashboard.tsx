@@ -141,25 +141,7 @@ export const AdvertDashboard = () => {
                         </p>
                     </div>
 
-                    {/* Notifications Banner */}
-                    {notifications.length > 0 && (
-                        <div className="space-y-2">
-                            {notifications.map((notification: any) => (
-                                <div key={notification.id} className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded shadow-sm flex justify-between items-start animate-in fade-in slide-in-from-top-2">
-                                    <div className="flex gap-3">
-                                        <Bell className="w-5 h-5 text-yellow-600 mt-0.5" />
-                                        <div>
-                                            <h4 className="font-bold text-yellow-800 dark:text-yellow-200 text-sm">{notification.title}</h4>
-                                            <p className="text-sm text-yellow-700 dark:text-yellow-300">{notification.message}</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0 hover:bg-yellow-200 dark:hover:bg-yellow-900/50" onClick={() => dismissNotification(notification.id)}>
-                                        <X className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+
 
                     {/* Hero / Upcoming Programs */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
