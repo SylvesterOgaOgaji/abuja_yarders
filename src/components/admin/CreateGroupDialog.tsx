@@ -37,6 +37,14 @@ export const CreateGroupDialog = ({ open, onOpenChange, onGroupCreated }: Create
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Check role
+      const { data: myRole } = await supabase.from('user_roles').select('role').eq('user_id', user.id).eq('role', 'sub_admin').single();
+      if (myRole) {
+        toast.error("Sub-admins cannot create new groups.");
+        setLoading(false);
+        return;
+      }
+
       const { data: group, error } = await supabase
         .from("groups")
         .insert({

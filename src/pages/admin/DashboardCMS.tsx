@@ -56,6 +56,7 @@ export default function DashboardCMS() {
     const [excoMembers, setExcoMembers] = useState<ExcoMember[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [userRole, setUserRole] = useState<'admin' | 'sub_admin' | null>(null);
 
     // Exco Dialog State
     const [isExcoDialogOpen, setIsExcoDialogOpen] = useState(false);
@@ -79,8 +80,16 @@ export default function DashboardCMS() {
     const [newGroup, setNewGroup] = useState<Partial<TownGroup>>({ is_active: true });
 
     useEffect(() => {
+        checkUserRole();
         fetchData();
     }, []);
+
+    const checkUserRole = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).single();
+        if (data) setUserRole(data.role as 'admin' | 'sub_admin');
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -431,8 +440,14 @@ export default function DashboardCMS() {
                         <TabsTrigger value="exco" className="py-2">Exco Members</TabsTrigger>
                         <TabsTrigger value="calls" className="py-2">Active Calls</TabsTrigger>
                         <TabsTrigger value="groups" className="py-2">Towns / Groups</TabsTrigger>
-                        <TabsTrigger value="legal" className="py-2">Legal & Policies</TabsTrigger>
+                        <TabsTrigger value="legal" className="py-2" disabled={userRole === 'sub_admin'}>Legal & Policies {userRole === 'sub_admin' && '(Admin Only)'}</TabsTrigger>
                     </TabsList>
+
+                    {userRole === 'sub_admin' && (
+                        <div className="md:hidden text-xs text-center text-muted-foreground mt-1">
+                            Some sections are restricted to Administrators.
+                        </div>
+                    )}
 
                     <TabsContent value="content" className="space-y-4 mt-4">
                         <Card>
@@ -504,7 +519,10 @@ export default function DashboardCMS() {
                     <TabsContent value="exco" className="space-y-4 mt-4">
                         <div className="flex justify-between items-center">
                             <h2 className="text-xl font-semibold">Exco Team</h2>
-                            <Button onClick={() => { setEditingExco(null); setIsExcoDialogOpen(true); }}>
+                            <Button
+                                onClick={() => { setEditingExco(null); setIsExcoDialogOpen(true); }}
+                                disabled={userRole === 'sub_admin'}
+                            >
                                 <Plus className="mr-2 h-4 w-4" /> Add Member
                             </Button>
                         </div>
@@ -530,10 +548,10 @@ export default function DashboardCMS() {
                                         <div className="mt-2 text-xs font-mono bg-secondary/50 p-1 rounded w-fit">Order: {member.display_order}</div>
                                     </CardContent>
                                     <div className="absolute top-2 right-2 flex gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExco(member); setIsExcoDialogOpen(true); }}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingExco(member); setIsExcoDialogOpen(true); }} disabled={userRole === 'sub_admin'}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteExcoMember(member.id)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteExcoMember(member.id)} disabled={userRole === 'sub_admin'}>
                                             <Trash className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -593,7 +611,7 @@ export default function DashboardCMS() {
                     <TabsContent value="groups" className="space-y-4 mt-4">
                         <div className="flex justify-between items-center">
                             <h2 className="text-xl font-semibold">Towns & Groups Management</h2>
-                            <Button onClick={() => { setEditingGroup(null); setIsGroupDialogOpen(true); }}>
+                            <Button onClick={() => { setEditingGroup(null); setIsGroupDialogOpen(true); }} disabled={userRole === 'sub_admin'}>
                                 <Plus className="mr-2 h-4 w-4" /> Add Town Group
                             </Button>
                         </div>
@@ -605,13 +623,13 @@ export default function DashboardCMS() {
                                         <CardDescription>{group.area_council}</CardDescription>
                                     </CardHeader>
                                     <div className="absolute top-2 right-2 flex gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleGroupActive(group)} title={group.is_active ? "Deactivate" : "Activate"}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleGroupActive(group)} title={group.is_active ? "Deactivate" : "Activate"} disabled={userRole === 'sub_admin'}>
                                             {group.is_active ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingGroup(group); setIsGroupDialogOpen(true); }}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingGroup(group); setIsGroupDialogOpen(true); }} disabled={userRole === 'sub_admin'}>
                                             <Pencil className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteGroup(group.id)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteGroup(group.id)} disabled={userRole === 'sub_admin'}>
                                             <Trash className="h-4 w-4" />
                                         </Button>
                                     </div>

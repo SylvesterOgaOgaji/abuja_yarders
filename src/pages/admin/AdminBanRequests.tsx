@@ -32,7 +32,7 @@ const AdminBanRequests = () => {
         });
     }, []);
 
-    const { isAdmin, loading: roleLoading } = useUserRole(currentUserId);
+    const { isAdmin, isSubAdmin, isAdminOrSubAdmin, loading: roleLoading } = useUserRole(currentUserId);
     const navigate = useNavigate();
 
     const fetchRequests = async () => {
@@ -63,12 +63,12 @@ const AdminBanRequests = () => {
     };
 
     useEffect(() => {
-        if (isAdmin) {
+        if (isAdminOrSubAdmin) {
             fetchRequests();
         }
-    }, [isAdmin]);
+    }, [isAdminOrSubAdmin]);
 
-    if (authChecked && !roleLoading && !isAdmin) {
+    if (authChecked && !roleLoading && !isAdminOrSubAdmin) {
         return (
             <div className="flex flex-col justify-center items-center h-screen gap-4">
                 <ShieldAlert className="h-12 w-12 text-destructive" />
@@ -151,12 +151,18 @@ const AdminBanRequests = () => {
                                 <div className="bg-muted/50 p-3 rounded-md mb-4 text-sm">
                                     <span className="font-semibold">Reason:</span> {request.reason}
                                 </div>
-                                <div className="flex gap-3 justify-end">
+                                <div className="flex gap-3 justify-end items-center">
+                                    {isSubAdmin && (
+                                        <div className="text-xs text-muted-foreground mr-2 italic">
+                                            Sub-Admins have view-only access.
+                                        </div>
+                                    )}
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleAction(request.id, 'reject', request.target_user_id)}
                                         className="gap-1"
+                                        disabled={!isAdmin}
                                     >
                                         <X className="h-4 w-4" /> Reject
                                     </Button>
@@ -165,6 +171,7 @@ const AdminBanRequests = () => {
                                         size="sm"
                                         onClick={() => handleAction(request.id, 'approve', request.target_user_id)}
                                         className="gap-1"
+                                        disabled={!isAdmin}
                                     >
                                         <Check className="h-4 w-4" /> Approve & Ban
                                     </Button>

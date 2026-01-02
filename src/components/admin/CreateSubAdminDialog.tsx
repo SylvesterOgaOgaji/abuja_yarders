@@ -43,7 +43,23 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
 
     setSearching(true);
     setFoundUser(null);
+    setFoundUser(null);
     setExistingRole(null);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Check if current user is sub_admin
+    const { data: myRoles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'sub_admin');
+
+    if (myRoles && myRoles.length > 0) {
+      toast.error("Sub-admins cannot create other administrators.");
+      return;
+    }
 
     try {
       const { data, error } = await supabase.functions.invoke('search-user-by-email', {
@@ -193,8 +209,8 @@ export const CreateSubAdminDialog = ({ open, onOpenChange }: CreateSubAdminDialo
                 {existingRole && (
                   <div className="mt-1">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${existingRole === 'admin'
-                        ? "bg-primary/10 text-primary"
-                        : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                      ? "bg-primary/10 text-primary"
+                      : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
                       }`}>
                       Current Role: {existingRole === 'admin' ? "Admin" : "Sub-Admin"}
                     </span>
