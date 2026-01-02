@@ -515,10 +515,14 @@ export default function DashboardCMS() {
                                         ))}
                                     </div>
 
-                                    {/* Group: Mission/Vision */}
+                                    {/* Group: Mission, Vision & Goals */}
                                     <div className="space-y-4">
-                                        <h3 className="font-semibold text-lg border-b pb-2">Mission & Vision</h3>
-                                        {contentItems.filter(i => i.key.endsWith('_text') && !i.key.startsWith('announcement')).map(item => (
+                                        <h3 className="font-semibold text-lg border-b pb-2">Mission, Vision & Goals</h3>
+                                        {contentItems.filter(i =>
+                                            i.key === 'mission_text' ||
+                                            i.key === 'vision_text' ||
+                                            i.key === 'core_goals_text'
+                                        ).map(item => (
                                             <ContentItemEditor key={item.key} item={item} onUpdate={handleContentUpdate} onUpload={handleFileUpload} />
                                         ))}
                                     </div>
@@ -539,7 +543,9 @@ export default function DashboardCMS() {
                                             !i.key.startsWith('featured_') &&
                                             !i.key.startsWith('announcement_') &&
                                             i.key !== 'special_notice_link' &&
-                                            !i.key.endsWith('_text') &&
+                                            i.key !== 'mission_text' &&
+                                            i.key !== 'vision_text' &&
+                                            i.key !== 'core_goals_text' &&
                                             i.key !== 'policy_document_url' &&
                                             i.key !== 'policy_title' &&
                                             i.key !== 'pledge_reason_text'
