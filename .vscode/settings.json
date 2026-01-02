@@ -1,0 +1,7 @@
+{
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/android/node_modules/**",
+        "**/android/capacitor-cordova-android-plugins/**"
+    ]
+}

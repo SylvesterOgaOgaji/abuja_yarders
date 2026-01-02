@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -122,6 +122,10 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-md">
+          <DialogHeader className="hidden">
+            <DialogTitle>Checking Permissions</DialogTitle>
+            <DialogDescription>Please wait...</DialogDescription>
+          </DialogHeader>
           <div className="flex items-center justify-center p-8">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
@@ -136,6 +140,9 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Seller Status Required</DialogTitle>
+            <DialogDescription>
+              You need to be a verified seller to create bids.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-muted-foreground">
@@ -165,6 +172,9 @@ export const CreateBidDialog = ({ groupId, userId, isOpen, onClose, onRequestSel
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Create Auction Bid</DialogTitle>
+          <DialogDescription>
+            Fill in the details below to create a new auction item.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>

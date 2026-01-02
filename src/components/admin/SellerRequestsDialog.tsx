@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -184,6 +185,7 @@ export const SellerRequestsDialog = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Seller Upgrade Requests</DialogTitle>
+          <DialogDescription>Review and manage requests from users applying to become sellers.</DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[500px]">
