@@ -7,11 +7,13 @@ import { Users, UserPlus, Store, Shield } from "lucide-react";
 import { AllMembersDialog } from "@/components/AllMembersDialog";
 import { SellerRequestsDialog } from "@/components/admin/SellerRequestsDialog";
 import { AddVerifiedSellerDialog } from "@/components/admin/AddVerifiedSellerDialog";
+import { VerifiedSellersDialog } from "@/components/admin/VerifiedSellersDialog";
 import { CreateSubAdminDialog } from "@/components/admin/CreateSubAdminDialog";
 
 export default function AdminUserManagement() {
     const [sellerRequestsOpen, setSellerRequestsOpen] = useState(false);
     const [addSellerDialogOpen, setAddSellerDialogOpen] = useState(false);
+    const [verifiedSellersOpen, setVerifiedSellersOpen] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
 
     // Fetch role on mount
@@ -68,6 +70,23 @@ export default function AdminUserManagement() {
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Verified Sellers</CardTitle>
+                            <Store className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <CardDescription className="mb-4">List of all active sellers and reports.</CardDescription>
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => setVerifiedSellersOpen(true)}
+                            >
+                                View List & Reports
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Add Seller</CardTitle>
                             <UserPlus className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
@@ -107,11 +126,16 @@ export default function AdminUserManagement() {
                     onOpenChange={setSellerRequestsOpen}
                 />
 
+                <VerifiedSellersDialog
+                    open={verifiedSellersOpen}
+                    onOpenChange={setVerifiedSellersOpen}
+                />
+
                 <AddVerifiedSellerDialog
                     open={addSellerDialogOpen}
                     onOpenChange={setAddSellerDialogOpen}
                 />
-            </div>
-        </AdminLayout>
+            </div >
+        </AdminLayout >
     );
 }
