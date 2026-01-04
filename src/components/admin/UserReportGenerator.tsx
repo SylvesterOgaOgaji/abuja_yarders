@@ -208,8 +208,8 @@ export function UserReportGenerator() {
         const printWindow = window.open("", "_blank");
         if (!printWindow) return;
 
-        const captainName = getExcoName("captain") || "Sylvester Oga Ogaji";
-        const viceCaptainName = "Joy Dennis-Ajai";
+        const captainName = "Joy Dennis-Ajai";
+        const viceCaptainName = "Sylvester Oga Ogaji";
 
         const logoLeft = window.location.origin + "/tip_main_logo.png";
         const logoRight = window.location.origin + "/abuja_yarders_logo.jpg";
@@ -350,7 +350,7 @@ export function UserReportGenerator() {
 
                 <div class="footer">
                     <div class="sign-block">
-                        <div style="height: 40px;"></div> {/* Space for actual signature */}
+                        <div style="height: 40px;"></div>
                         <div class="sign-line"></div>
                         <div class="sign-name">${captainName}</div>
                         <div class="sign-role">Captain</div>
@@ -383,8 +383,8 @@ export function UserReportGenerator() {
     };
 
     const executeExportCSV = () => {
-        const captainName = getExcoName("captain") || "Sylvester Oga Ogaji";
-        const viceCaptainName = "Joy Dennis-Ajai";
+        const captainName = "Joy Dennis-Ajai";
+        const viceCaptainName = "Sylvester Oga Ogaji";
 
         const brandingRows = [
             ["TIP ABUJA YARDERS"],
