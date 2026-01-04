@@ -31,6 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Printer, Download, Search, X, Filter } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { ReportSecurityDialog } from "./ReportSecurityDialog";
 
 interface Profile {
     id: string;
@@ -41,6 +42,11 @@ interface Profile {
     created_at: string;
     town: string | null;
     area_council: string | null;
+}
+
+interface ExcoMember {
+    name: string;
+    role: string;
 }
 
 const AVAILABLE_COLUMNS = [
@@ -55,6 +61,7 @@ const AVAILABLE_COLUMNS = [
 
 export function UserReportGenerator() {
     const [users, setUsers] = useState<Profile[]>([]);
+    const [exco, setExco] = useState<ExcoMember[]>([]);
     const [loading, setLoading] = useState(false);
     const [selectedColumns, setSelectedColumns] = useState<string[]>([
         "full_name",
@@ -71,8 +78,13 @@ export function UserReportGenerator() {
     const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
     const [exemptionSearch, setExemptionSearch] = useState("");
 
+    // Security & Modal State
+    const [securityDialogOpen, setSecurityDialogOpen] = useState(false);
+    const [pendingAction, setPendingAction] = useState<"print" | "export" | null>(null);
+
     useEffect(() => {
         fetchUsers();
+        fetchExco();
     }, []);
 
     const fetchUsers = async () => {
@@ -92,6 +104,18 @@ export function UserReportGenerator() {
             setLoading(false);
         }
     };
+
+    const fetchExco = async () => {
+        try {
+            const { data } = await supabase
+                .from("exco_members")
+                .select("name, role");
+            // @ts-ignore
+            setExco(data || []);
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     const toggleColumn = (columnId: string) => {
         setSelectedColumns((prev) =>
@@ -136,73 +160,144 @@ export function UserReportGenerator() {
         return true;
     });
 
-    const handlePrint = () => {
+    const initiateAction = (action: "print" | "export") => {
+        setPendingAction(action);
+        setSecurityDialogOpen(true);
+    };
+
+    const confirmAction = async () => {
+        setSecurityDialogOpen(false);
+        try {
+            // 1. Log Audit
+            const { data: userData } = await supabase.auth.getUser();
+            if (userData.user) {
+                await supabase.from("admin_audit_logs" as any).insert({
+                    user_id: userData.user.id,
+                    action: pendingAction === "print" ? "PRINT_USER_REPORT" : "EXPORT_USER_CSV",
+                    details: {
+                        filters,
+                        excludedCount: excludedIds.size,
+                        columns: selectedColumns
+                    }
+                });
+            }
+
+            // 2. Perform Action
+            if (pendingAction === "print") {
+                executePrint();
+            } else if (pendingAction === "export") {
+                executeExportCSV();
+            }
+        } catch (error) {
+            console.error("Audit log failed", error);
+            // Proceed anyway or block? For now proceed but warn.
+            toast.error("Audit log failed, proceeding with caution.");
+            if (pendingAction === "print") executePrint();
+            if (pendingAction === "export") executeExportCSV();
+        } finally {
+            setPendingAction(null);
+        }
+    };
+
+    const getExcoName = (roleKey: string) => {
+        const member = exco.find(e => e.role.toLowerCase().includes(roleKey.toLowerCase()));
+        return member ? member.name : "Not Assigned";
+    }
+
+    const executePrint = () => {
         const printWindow = window.open("", "_blank");
         if (!printWindow) return;
+
+        const captainName = getExcoName("captain") || "Captain Name";
+        const viceCaptainName = getExcoName("vice") || "Vice Captain Name"; // Matches 'vice captain' or similar
 
         const html = `
             <html>
             <head>
-                <title>User Directory Report</title>
+                <title>TIP Abuja Yarders - Confidential Report</title>
                 <style>
-                    body { font-family: sans-serif; padding: 20px; font-size: 12px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
-                    th { background-color: #f2f2f2; font-weight: bold; }
-                    .header { text-align: center; margin-bottom: 20px; }
-                    .meta { margin-bottom: 20px; font-size: 10px; color: #666; }
-                    .banned { color: red; }
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; font-size: 12px; color: #333; }
+                    .letterhead { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px; text-align: center; }
+                    .org-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin: 0; }
+                    .org-sub { font-size: 14px; color: #555; margin-top: 5px; }
+                    .logo { width: 80px; height: 80px; margin-bottom: 10px; }
+                    
+                    .report-info { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 11px; }
+                    .report-title { text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; text-decoration: underline; }
+                    
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                    th { background-color: #f8f9fa; font-weight: bold; }
+                    tr:nth-child(even) { background-color: #fcfcfc; }
+                    
+                    .footer { margin-top: 40px; display: flex; justify-content: space-between; text-align: center; }
+                    .sign-line { border-top: 1px solid #000; width: 200px; margin: 0 auto; padding-top: 5px; }
+                    .confidential-banner { text-align: center; font-size: 10px; color: #999; margin-top: 50px; text-transform: uppercase; letter-spacing: 1px; }
+                    .banned { color: red; font-weight: bold; }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h2>User Directory Report</h2>
+                <div class="letterhead">
+                   <!-- <img src="/placeholder.svg" alt="Logo" class="logo" /> -->
+                    <!-- Ideally use absolute full URL for logo if remote, or base64 if local -->
+                    <h1 class="org-name">TIP Abuja Yarders</h1>
+                    <div class="org-sub">The Integrity People - Organization Report</div>
                 </div>
-                <div class="meta">
-                    <p>Generated: ${new Date().toLocaleString()}</p>
-                    <p>Filters: Role=${filters.role}, Status=${filters.status}</p>
-                    <p>Total Records: ${filteredUsers.length}</p>
+
+                <div class="report-info">
+                    <div>
+                        <strong>Date:</strong> ${format(new Date(), "PPP")}<br/>
+                        <strong>Generated By:</strong> Admin System
+                    </div>
+                    <div style="text-align: right;">
+                         <strong>Captain:</strong> ${captainName}<br/>
+                         <strong>Vice-Captain:</strong> ${viceCaptainName}
+                    </div>
                 </div>
+
+                <div class="report-title">User Directory Report</div>
+
                 <table>
                     <thead>
                         <tr>
-                            ${selectedColumns
-                .map(
-                    (colId) =>
-                        `<th>${AVAILABLE_COLUMNS.find((c) => c.id === colId)?.label
-                        }</th>`
-                )
-                .join("")}
+                            ${selectedColumns.map(colId =>
+            `<th>${AVAILABLE_COLUMNS.find(c => c.id === colId)?.label}</th>`
+        ).join("")}
                         </tr>
                     </thead>
                     <tbody>
-                        ${filteredUsers
-                .map(
-                    (user) => `
+                        ${filteredUsers.map(user => `
                             <tr>
-                                ${selectedColumns
-                            .map((colId) => {
-                                if (colId === "status") {
-                                    return `<td class="${user.is_banned ? "banned" : ""
-                                        }">${user.is_banned ? "Banned" : "Active"
-                                        }</td>`;
-                                }
-                                if (colId === "created_at") {
-                                    return `<td>${format(
-                                        new Date(user.created_at),
-                                        "MMM d, yyyy"
-                                    )}</td>`;
-                                }
-                                return `<td>${(user as any)[colId] || "-"
-                                    }</td>`;
-                            })
-                            .join("")}
+                                ${selectedColumns.map(colId => {
+            if (colId === "status") {
+                return `<td class="${user.is_banned ? "banned" : ""}">${user.is_banned ? "BANNED" : "Active"}</td>`;
+            }
+            if (colId === "created_at") {
+                return `<td>${format(new Date(user.created_at), "MMM d, yyyy")}</td>`;
+            }
+            return `<td>${(user as any)[colId] || "-"}</td>`;
+        }).join("")}
                             </tr>
-                        `
-                )
-                .join("")}
+                        `).join("")}
                     </tbody>
                 </table>
+
+                <div class="footer">
+                    <div>
+                        <div style="height: 40px;"></div>
+                        <div class="sign-line">${captainName}</div>
+                        <div>Captain</div>
+                    </div>
+                     <div>
+                        <div style="height: 40px;"></div>
+                        <div class="sign-line">${viceCaptainName}</div>
+                        <div>Vice-Captain</div>
+                    </div>
+                </div>
+
+                <div class="confidential-banner">
+                    Confidential Document - For Official Use Only
+                </div>
             </body>
             </html>
         `;
@@ -212,7 +307,18 @@ export function UserReportGenerator() {
         printWindow.print();
     };
 
-    const handleExportCSV = () => {
+    const executeExportCSV = () => {
+        const captainName = getExcoName("captain") || "Captain Name";
+        const viceCaptainName = getExcoName("vice") || "Vice Captain Name";
+
+        const brandingRows = [
+            ["TIP ABUJA YARDERS"],
+            ["OFFICIAL USER REPORT"],
+            [`Generated: ${format(new Date(), "yyyy-MM-dd HH:mm")}`],
+            [`Captain: ${captainName}`, `Vice-Captain: ${viceCaptainName}`],
+            [], // Empty row
+        ];
+
         const headers = selectedColumns.map(
             (colId) => AVAILABLE_COLUMNS.find((c) => c.id === colId)?.label
         );
@@ -226,6 +332,7 @@ export function UserReportGenerator() {
         );
 
         const csvContent = [
+            ...brandingRows.map(r => r.join(",")),
             headers.join(","),
             ...rows.map((r) => r.join(",")),
         ].join("\n");
@@ -236,7 +343,7 @@ export function UserReportGenerator() {
         link.setAttribute("href", url);
         link.setAttribute(
             "download",
-            `user_report_${format(new Date(), "yyyy-MM-dd")}.csv`
+            `tip_abuja_yarders_report_${format(new Date(), "yyyy-MM-dd")}.csv`
         );
         link.style.visibility = "hidden";
         document.body.appendChild(link);
@@ -245,277 +352,283 @@ export function UserReportGenerator() {
     };
 
     return (
-        <Card className="mt-8">
-            <CardHeader>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                        <CardTitle className="text-xl flex items-center gap-2">
-                            <Filter className="w-5 h-5 text-primary" />
-                            User Reporting & Export
-                        </CardTitle>
-                        <CardDescription>
-                            Generate custom reports of users, sellers, and staff.
-                        </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleExportCSV}
-                            className="gap-2"
-                            disabled={loading || filteredUsers.length === 0}
-                        >
-                            <Download className="w-4 h-4" /> Export CSV
-                        </Button>
-                        <Button
-                            size="sm"
-                            onClick={handlePrint}
-                            className="gap-2"
-                            disabled={loading || filteredUsers.length === 0}
-                        >
-                            <Printer className="w-4 h-4" /> Print Report
-                        </Button>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {/* Configuration Controls */}
-                <div className="space-y-6">
-                    {/* Filters Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-md bg-muted/20">
-                        <div className="space-y-2">
-                            <Label>Filter by Role</Label>
-                            <Select
-                                value={filters.role}
-                                onValueChange={(v) =>
-                                    setFilters((prev) => ({ ...prev, role: v }))
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Roles" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Roles</SelectItem>
-                                    <SelectItem value="user">User</SelectItem>
-                                    <SelectItem value="seller">Seller</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                    <SelectItem value="sub_admin">Sub Admin</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+        <>
+            <ReportSecurityDialog
+                open={securityDialogOpen}
+                onOpenChange={setSecurityDialogOpen}
+                onConfirm={confirmAction}
+                actionType={pendingAction || "print"}
+            />
 
-                        <div className="space-y-2">
-                            <Label>Filter by Status</Label>
-                            <Select
-                                value={filters.status}
-                                onValueChange={(v) =>
-                                    setFilters((prev) => ({ ...prev, status: v }))
-                                }
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="All Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="active">Active Only</SelectItem>
-                                    <SelectItem value="banned">Banned Only</SelectItem>
-                                </SelectContent>
-                            </Select>
+            <Card className="mt-8">
+                <CardHeader>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <Filter className="w-5 h-5 text-primary" />
+                                User Reporting & Export
+                            </CardTitle>
+                            <CardDescription>
+                                Generate custom reports of users, sellers, and staff.
+                            </CardDescription>
                         </div>
-
-                        <div className="space-y-2 md:col-span-2">
-                            <Label>Search Users (to filter list)</Label>
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search by name or phone..."
-                                    className="pl-8"
-                                    value={filters.search}
-                                    onChange={(e) =>
-                                        setFilters((prev) => ({ ...prev, search: e.target.value }))
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => initiateAction("export")}
+                                className="gap-2"
+                                disabled={loading || filteredUsers.length === 0}
+                            >
+                                <Download className="w-4 h-4" /> Export CSV
+                            </Button>
+                            <Button
+                                size="sm"
+                                onClick={() => initiateAction("print")}
+                                className="gap-2"
+                                disabled={loading || filteredUsers.length === 0}
+                            >
+                                <Printer className="w-4 h-4" /> Print Report
+                            </Button>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {/* Configuration Controls */}
+                    <div className="space-y-6">
+                        {/* Filters Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-md bg-muted/20">
+                            <div className="space-y-2">
+                                <Label>Filter by Role</Label>
+                                <Select
+                                    value={filters.role}
+                                    onValueChange={(v) =>
+                                        setFilters((prev) => ({ ...prev, role: v }))
                                     }
-                                />
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All Roles" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Roles</SelectItem>
+                                        <SelectItem value="user">User</SelectItem>
+                                        <SelectItem value="seller">Seller</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="sub_admin">Sub Admin</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Filter by Status</Label>
+                                <Select
+                                    value={filters.status}
+                                    onValueChange={(v) =>
+                                        setFilters((prev) => ({ ...prev, status: v }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="active">Active Only</SelectItem>
+                                        <SelectItem value="banned">Banned Only</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2 md:col-span-2">
+                                <Label>Search Users (to filter list)</Label>
+                                <div className="relative">
+                                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search by name or phone..."
+                                        className="pl-8"
+                                        value={filters.search}
+                                        onChange={(e) =>
+                                            setFilters((prev) => ({ ...prev, search: e.target.value }))
+                                        }
+                                    />
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Columns & Exemption Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Column Selection */}
-                        <div className="space-y-3">
-                            <Label className="text-base font-semibold">
-                                Select Columns to Print
-                            </Label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {AVAILABLE_COLUMNS.map((col) => (
-                                    <div
-                                        key={col.id}
-                                        className="flex items-center space-x-2"
-                                    >
-                                        <Checkbox
-                                            id={`col-${col.id}`}
-                                            checked={selectedColumns.includes(col.id)}
-                                            onCheckedChange={() => toggleColumn(col.id)}
-                                        />
-                                        <label
-                                            htmlFor={`col-${col.id}`}
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        {/* Columns & Exemption Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* Column Selection */}
+                            <div className="space-y-3">
+                                <Label className="text-base font-semibold">
+                                    Select Columns to Print
+                                </Label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {AVAILABLE_COLUMNS.map((col) => (
+                                        <div
+                                            key={col.id}
+                                            className="flex items-center space-x-2"
                                         >
-                                            {col.label}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Exemption Mechanism */}
-                        <div className="space-y-3">
-                            <Label className="text-base font-semibold">
-                                Exempt Specific Users
-                            </Label>
-                            <div className="relative">
-                                <Input
-                                    placeholder="Search user to exempt..."
-                                    value={exemptionSearch}
-                                    onChange={(e) => setExemptionSearch(e.target.value)}
-                                />
-                                {exemptionSearch.length > 1 && (
-                                    <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-40 overflow-y-auto">
-                                        {users
-                                            .filter(
-                                                (u) =>
-                                                    !excludedIds.has(u.id) &&
-                                                    u.full_name
-                                                        .toLowerCase()
-                                                        .includes(exemptionSearch.toLowerCase())
-                                            )
-                                            .map((u) => (
-                                                <div
-                                                    key={u.id}
-                                                    className="p-2 hover:bg-muted cursor-pointer text-sm"
-                                                    onClick={() => toggleExclusion(u.id)}
-                                                >
-                                                    {u.full_name} ({u.role})
-                                                </div>
-                                            ))}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {Array.from(excludedIds).map((id) => {
-                                    const user = users.find((u) => u.id === id);
-                                    if (!user) return null;
-                                    return (
-                                        <Badge
-                                            key={id}
-                                            variant="secondary"
-                                            className="flex items-center gap-1"
-                                        >
-                                            {user.full_name}
-                                            <X
-                                                className="w-3 h-3 cursor-pointer hover:text-destructive"
-                                                onClick={() => toggleExclusion(id)}
+                                            <Checkbox
+                                                id={`col-${col.id}`}
+                                                checked={selectedColumns.includes(col.id)}
+                                                onCheckedChange={() => toggleColumn(col.id)}
                                             />
-                                        </Badge>
-                                    );
-                                })}
-                                {excludedIds.size === 0 && (
-                                    <span className="text-sm text-muted-foreground italic">
-                                        No users exempted.
-                                    </span>
-                                )}
+                                            <label
+                                                htmlFor={`col-${col.id}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                            >
+                                                {col.label}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Preview Table */}
-                    <div className="border rounded-md">
-                        <div className="bg-muted p-2 text-sm font-medium border-b flex justify-between items-center">
-                            <span>Preview ({filteredUsers.length} records)</span>
-                        </div>
-                        <ScrollArea className="h-[300px]">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        {selectedColumns.map((colId) => (
-                                            <TableHead key={colId}>
-                                                {AVAILABLE_COLUMNS.find((c) => c.id === colId)?.label}
-                                            </TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {loading ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={selectedColumns.length}
-                                                className="h-24 text-center"
-                                            >
-                                                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : filteredUsers.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={selectedColumns.length}
-                                                className="h-24 text-center text-muted-foreground"
-                                            >
-                                                No users match the criteria.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        filteredUsers.slice(0, 50).map((user) => (
-                                            <TableRow key={user.id}>
-                                                {selectedColumns.map((colId) => {
-                                                    if (colId === "status") {
-                                                        return (
-                                                            <TableCell key={colId}>
-                                                                <Badge
-                                                                    variant={
-                                                                        user.is_banned
-                                                                            ? "destructive"
-                                                                            : "outline"
-                                                                    }
-                                                                >
-                                                                    {user.is_banned ? "Banned" : "Active"}
-                                                                </Badge>
-                                                            </TableCell>
-                                                        );
-                                                    }
-                                                    if (colId === "created_at") {
-                                                        return (
-                                                            <TableCell key={colId}>
-                                                                {format(
-                                                                    new Date(user.created_at),
-                                                                    "MMM d, yyyy"
-                                                                )}
-                                                            </TableCell>
-                                                        );
-                                                    }
-                                                    return (
-                                                        <TableCell key={colId}>
-                                                            {(user as any)[colId] || "-"}
-                                                        </TableCell>
-                                                    );
-                                                })}
-                                            </TableRow>
-                                        ))
+                            {/* Exemption Mechanism */}
+                            <div className="space-y-3">
+                                <Label className="text-base font-semibold">
+                                    Exempt Specific Users
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        placeholder="Search user to exempt..."
+                                        value={exemptionSearch}
+                                        onChange={(e) => setExemptionSearch(e.target.value)}
+                                    />
+                                    {exemptionSearch.length > 1 && (
+                                        <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-40 overflow-y-auto">
+                                            {users
+                                                .filter(
+                                                    (u) =>
+                                                        !excludedIds.has(u.id) &&
+                                                        u.full_name
+                                                            .toLowerCase()
+                                                            .includes(exemptionSearch.toLowerCase())
+                                                )
+                                                .map((u) => (
+                                                    <div
+                                                        key={u.id}
+                                                        className="p-2 hover:bg-muted cursor-pointer text-sm"
+                                                        onClick={() => toggleExclusion(u.id)}
+                                                    >
+                                                        {u.full_name} ({u.role})
+                                                    </div>
+                                                ))}
+                                        </div>
                                     )}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                        {filteredUsers.length > 50 && (
-                            <div className="p-2 text-xs text-center text-muted-foreground bg-muted/20 border-t">
-                                Showing first 50 of {filteredUsers.length} records. Export/Print to
-                                see all.
+                                </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {Array.from(excludedIds).map((id) => {
+                                        const user = users.find((u) => u.id === id);
+                                        if (!user) return null;
+                                        return (
+                                            <Badge
+                                                key={id}
+                                                variant="secondary"
+                                                className="flex items-center gap-1"
+                                            >
+                                                {user.full_name}
+                                                <X
+                                                    className="w-3 h-3 cursor-pointer hover:text-destructive"
+                                                    onClick={() => toggleExclusion(id)}
+                                                />
+                                            </Badge>
+                                        );
+                                    })}
+                                    {excludedIds.size === 0 && (
+                                        <span className="text-sm text-muted-foreground italic">
+                                            No users exempted.
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Preview Table */}
+                        <div className="border rounded-md">
+                            <div className="bg-muted p-2 text-sm font-medium border-b flex justify-between items-center">
+                                <span>Preview ({filteredUsers.length} records)</span>
+                            </div>
+                            <ScrollArea className="h-[300px]">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            {selectedColumns.map((colId) => (
+                                                <TableHead key={colId}>
+                                                    {AVAILABLE_COLUMNS.find((c) => c.id === colId)?.label}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {loading ? (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={selectedColumns.length}
+                                                    className="h-24 text-center"
+                                                >
+                                                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : filteredUsers.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell
+                                                    colSpan={selectedColumns.length}
+                                                    className="h-24 text-center text-muted-foreground"
+                                                >
+                                                    No users match the criteria.
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            filteredUsers.slice(0, 50).map((user) => (
+                                                <TableRow key={user.id}>
+                                                    {selectedColumns.map((colId) => {
+                                                        if (colId === "status") {
+                                                            return (
+                                                                <TableCell key={colId}>
+                                                                    <Badge
+                                                                        variant={
+                                                                            user.is_banned
+                                                                                ? "destructive"
+                                                                                : "outline"
+                                                                        }
+                                                                    >
+                                                                        {user.is_banned ? "Banned" : "Active"}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                            );
+                                                        }
+                                                        if (colId === "created_at") {
+                                                            return (
+                                                                <TableCell key={colId}>
+                                                                    {format(
+                                                                        new Date(user.created_at),
+                                                                        "MMM d, yyyy"
+                                                                    )}
+                                                                </TableCell>
+                                                            );
+                                                        }
+                                                        return (
+                                                            <TableCell key={colId}>
+                                                                {(user as any)[colId] || "-"}
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </ScrollArea>
+                            {filteredUsers.length > 50 && (
+                                <div className="p-2 text-xs text-center text-muted-foreground bg-muted/20 border-t">
+                                    Showing first 50 of {filteredUsers.length} records. Export/Print to
+                                    see all.
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
+                </CardContent>
+            </Card>
+        </>
     );
 }
-
-// Default export for lazy loading if needed, though named export is fine
-export default UserReportGenerator;
