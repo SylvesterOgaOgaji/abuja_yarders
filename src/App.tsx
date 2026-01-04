@@ -25,6 +25,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import P
 import AdminUserManagement from "@/pages/admin/AdminUserManagement";
 import AdminBanRequests from "@/pages/admin/AdminBanRequests";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
+import ReactivateAccount from "./pages/auth/ReactivateAccount";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reactivate" element={<ReactivateAccount />} />
       <Route path="/auth/update-password" element={<UpdatePassword />} />
       <Route path="/seller/:userId" element={<SellerProfile />} />
       <Route path="/admin/cms" element={<DashboardCMS />} />
