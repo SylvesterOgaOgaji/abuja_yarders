@@ -209,7 +209,10 @@ export function UserReportGenerator() {
         if (!printWindow) return;
 
         const captainName = getExcoName("captain") || "Captain Name";
-        const viceCaptainName = getExcoName("vice") || "Vice Captain Name"; // Matches 'vice captain' or similar
+        const viceCaptainName = getExcoName("vice") || "Vice Captain Name";
+
+        const logoLeft = window.location.origin + "/tip_main_logo.png";
+        const logoRight = window.location.origin + "/abuja_yarders_logo.jpg";
 
         const html = `
             <html>
@@ -217,41 +220,104 @@ export function UserReportGenerator() {
                 <title>TIP Abuja Yarders - Confidential Report</title>
                 <style>
                     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; font-size: 12px; color: #333; }
-                    .letterhead { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 20px; text-align: center; }
-                    .org-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin: 0; }
-                    .org-sub { font-size: 14px; color: #555; margin-top: 5px; }
-                    .logo { width: 80px; height: 80px; margin-bottom: 10px; }
                     
-                    .report-info { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 11px; }
-                    .report-title { text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; text-decoration: underline; }
+                    /* Letterhead Layout */
+                    .letterhead { 
+                        display: flex; 
+                        justify-content: space-between; 
+                        align-items: center; 
+                        border-bottom: 2px solid #000; 
+                        padding-bottom: 20px; 
+                        margin-bottom: 30px; 
+                    }
+                    .logo { 
+                        height: 80px; 
+                        width: auto; 
+                        object-fit: contain; 
+                    }
+                    .header-center {
+                        text-align: center;
+                        flex-grow: 1;
+                        padding: 0 20px;
+                    }
+                    .org-name { 
+                        font-size: 20px; 
+                        font-weight: 800; 
+                        color: #E63946; /* Brand Red/Orange */
+                        text-transform: uppercase; 
+                        margin: 0; 
+                        line-height: 1.2;
+                    }
+                    .org-parent {
+                        font-size: 12px;
+                        font-weight: 600;
+                        color: #333;
+                        margin-bottom: 5px;
+                        letter-spacing: 1px;
+                    }
+                    .org-motto {
+                        font-size: 10px;
+                        font-style: italic;
+                        color: #666;
+                        margin-top: 4px;
+                    }
                     
+                    /* Report Meta */
+                    .report-info { display: flex; justify-content: space-between; margin-bottom: 30px; font-size: 11px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+                    .report-title { text-align: center; font-size: 18px; font-weight: bold; margin: 20px 0; text-decoration: underline; text-transform: uppercase; }
+                    
+                    /* Table */
                     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
                     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-                    th { background-color: #f8f9fa; font-weight: bold; }
+                    th { background-color: #f8f9fa; font-weight: bold; font-size: 11px; text-transform: uppercase; }
                     tr:nth-child(even) { background-color: #fcfcfc; }
                     
-                    .footer { margin-top: 40px; display: flex; justify-content: space-between; text-align: center; }
-                    .sign-line { border-top: 1px solid #000; width: 200px; margin: 0 auto; padding-top: 5px; }
-                    .confidential-banner { text-align: center; font-size: 10px; color: #999; margin-top: 50px; text-transform: uppercase; letter-spacing: 1px; }
+                    /* Footer & Signatures */
+                    .footer { margin-top: 60px; display: flex; justify-content: space-between; text-align: center; }
+                    .sign-block { width: 200px; }
+                    .sign-line { border-top: 1px solid #000; margin-bottom: 5px; }
+                    .sign-name { font-weight: bold; font-size: 12px; margin-bottom: 2px; }
+                    .sign-role { font-size: 10px; color: #555; text-transform: uppercase; }
+                    
+                    .confidential-banner { 
+                        text-align: center; 
+                        font-size: 9px; 
+                        color: #888; 
+                        margin-top: 50px; 
+                        text-transform: uppercase; 
+                        letter-spacing: 2px;
+                        border-top: 1px solid #eee;
+                        padding-top: 10px;
+                    }
                     .banned { color: red; font-weight: bold; }
+                    
+                    /* Watermark effect for print if desired, but keep clean for readability */
+                    @media print {
+                        body { -webkit-print-color-adjust: exact; }
+                    }
                 </style>
             </head>
             <body>
                 <div class="letterhead">
-                   <!-- <img src="/placeholder.svg" alt="Logo" class="logo" /> -->
-                    <!-- Ideally use absolute full URL for logo if remote, or base64 if local -->
-                    <h1 class="org-name">TIP Abuja Yarders</h1>
-                    <div class="org-sub">The Integrity People - Organization Report</div>
+                    <img src="${logoLeft}" alt="TIP Logo" class="logo" />
+                    
+                    <div class="header-center">
+                        <div class="org-parent">THE INTENTIONAL PARENT ACADEMY</div>
+                        <h1 class="org-name">TIP ABUJA YARDERS</h1>
+                        <div class="org-motto">"Leave No Yarder Behind"</div>
+                    </div>
+                    
+                    <img src="${logoRight}" alt="Abuja Yarders Logo" class="logo" />
                 </div>
 
                 <div class="report-info">
                     <div>
-                        <strong>Date:</strong> ${format(new Date(), "PPP")}<br/>
+                        <strong>Report Generated:</strong> ${format(new Date(), "PPP at pp")}<br/>
                         <strong>Generated By:</strong> Admin System
                     </div>
                     <div style="text-align: right;">
-                         <strong>Captain:</strong> ${captainName}<br/>
-                         <strong>Vice-Captain:</strong> ${viceCaptainName}
+                        <strong>Confidential Document</strong><br/>
+                        For Official Use Only
                     </div>
                 </div>
 
@@ -283,20 +349,23 @@ export function UserReportGenerator() {
                 </table>
 
                 <div class="footer">
-                    <div>
-                        <div style="height: 40px;"></div>
-                        <div class="sign-line">${captainName}</div>
-                        <div>Captain</div>
+                    <div class="sign-block">
+                        <div style="height: 40px;"></div> {/* Space for actual signature */}
+                        <div class="sign-line"></div>
+                        <div class="sign-name">${captainName}</div>
+                        <div class="sign-role">Captain</div>
                     </div>
-                     <div>
+                     <div class="sign-block">
                         <div style="height: 40px;"></div>
-                        <div class="sign-line">${viceCaptainName}</div>
-                        <div>Vice-Captain</div>
+                        <div class="sign-line"></div>
+                        <div class="sign-name">${viceCaptainName}</div>
+                        <div class="sign-role">Vice-Captain</div>
                     </div>
                 </div>
 
                 <div class="confidential-banner">
-                    Confidential Document - For Official Use Only
+                    This document contains confidential information belonging to TIP Abuja Yarders. <br/>
+                    Unauthorized distribution or disclosure is strictly prohibited.
                 </div>
             </body>
             </html>
