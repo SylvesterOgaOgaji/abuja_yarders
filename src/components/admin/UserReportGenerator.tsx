@@ -73,6 +73,8 @@ export function UserReportGenerator() {
     const [filters, setFilters] = useState({
         role: "all",
         status: "all",
+        town: "all",
+        area_council: "all",
         search: "",
     });
     const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
@@ -136,6 +138,10 @@ export function UserReportGenerator() {
         setExemptionSearch(""); // Clear search after action
     };
 
+    // Derived Lists for Dropdowns
+    const uniqueTowns = Array.from(new Set(users.map(u => u.town).filter(Boolean))).sort();
+    const uniqueAreaCouncils = Array.from(new Set(users.map(u => u.area_council).filter(Boolean))).sort();
+
     // Filter Logic
     const filteredUsers = users.filter((user) => {
         // 1. Excluded IDs
@@ -148,7 +154,11 @@ export function UserReportGenerator() {
         if (filters.status === "active" && user.is_banned) return false;
         if (filters.status === "banned" && !user.is_banned) return false;
 
-        // 4. Search Filter
+        // 4. Location Filters
+        if (filters.town !== "all" && user.town !== filters.town) return false;
+        if (filters.area_council !== "all" && user.area_council !== filters.area_council) return false;
+
+        // 5. Search Filter
         if (
             filters.search &&
             !user.full_name?.toLowerCase().includes(filters.search.toLowerCase()) &&
@@ -526,6 +536,50 @@ export function UserReportGenerator() {
                                         }
                                     />
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Filter by Town</Label>
+                                <Select
+                                    value={filters.town}
+                                    onValueChange={(v) =>
+                                        setFilters((prev) => ({ ...prev, town: v }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All Towns" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Towns</SelectItem>
+                                        {uniqueTowns.map((town) => (
+                                            <SelectItem key={town} value={town as string}>
+                                                {town}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Filter by Area Council</Label>
+                                <Select
+                                    value={filters.area_council}
+                                    onValueChange={(v) =>
+                                        setFilters((prev) => ({ ...prev, area_council: v }))
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="All Area Councils" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Area Councils</SelectItem>
+                                        {uniqueAreaCouncils.map((ac) => (
+                                            <SelectItem key={ac} value={ac as string}>
+                                                {ac}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
 

@@ -2,7 +2,9 @@
     "java.import.exclusions": [
         "**/node_modules/**",
         "**/android/node_modules/**",
-        "**/android/capacitor-cordova-android-plugins/**"
+        "**/android/capacitor-cordova-android-plugins/**",
+        "**/node_modules/@capacitor/**",
+        "**/node_modules/@revenuecat/**"
     ],
     "deno.enable": true,
     "deno.unstable": true,
