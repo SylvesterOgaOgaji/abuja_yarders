@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Printer, FileText, Download, Users, Heart, DollarSign, Activity } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { UserReportGenerator } from "@/components/admin/UserReportGenerator";
 
 export default function AdminReports() {
     const [loading, setLoading] = useState(true);
@@ -188,6 +189,11 @@ export default function AdminReports() {
 
                 <div className="hidden print:block text-center text-xs text-gray-400 mt-8">
                     Confidential Report - For Admin Use Only
+                </div>
+
+                {/* Advanced Reporting Section */}
+                <div className="print:hidden">
+                    <UserReportGenerator />
                 </div>
             </div>
         </AdminLayout>

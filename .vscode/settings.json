@@ -3,5 +3,10 @@
         "**/node_modules/**",
         "**/android/node_modules/**",
         "**/android/capacitor-cordova-android-plugins/**"
+    ],
+    "deno.enable": true,
+    "deno.unstable": true,
+    "deno.enablePaths": [
+        "supabase/functions"
     ]
 }
