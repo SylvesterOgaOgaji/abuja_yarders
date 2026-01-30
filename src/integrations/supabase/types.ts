@@ -302,6 +302,48 @@ export type Database = {
           },
         ]
       }
+      ban_requests: {
+        Row: {
+          id: string
+          target_user_id: string
+          requester_id: string
+          reason: string
+          status: 'pending' | 'approved' | 'rejected'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          target_user_id: string
+          requester_id: string
+          reason: string
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          target_user_id?: string
+          requester_id?: string
+          reason?: string
+          status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ban_requests_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ban_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string

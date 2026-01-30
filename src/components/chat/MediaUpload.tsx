@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Image as ImageIcon, Video, Loader2, Camera as CameraIcon } from "lucide-react";
 import { toast } from "sonner";
 import { VideoTrimmer } from "./VideoTrimmer";
-import { useCamera } from "@/hooks/useCamera";
-import { Capacitor } from "@capacitor/core";
+// import { useCamera } from "@/hooks/useCamera";
+// import { Capacitor } from "@capacitor/core";
 
 interface MediaUploadProps {
   groupId: string;
@@ -31,7 +31,8 @@ export const MediaUpload = ({
   const [uploading, setUploading] = useState(false);
   const [videoToTrim, setVideoToTrim] = useState<File | null>(null);
   const [showTrimmer, setShowTrimmer] = useState(false);
-  const { takePhoto, isNative } = useCamera();
+  /* const { takePhoto, isNative } = useCamera(); // Removed native camera hook */
+  const isNative = false; // Force non-native behavior for UI
 
   const validateVideo = (file: File): Promise<boolean> => {
     return new Promise((resolve) => {
@@ -122,17 +123,9 @@ export const MediaUpload = ({
     }
   };
 
-  const handleNativeCamera = async () => {
-    if (type !== 'image') {
-      toast.error("Native video capture not yet supported directly. Please use file picker.");
-      return;
-    }
-
-    const result = await takePhoto();
-    if (result?.blob) {
-      uploadFile(result.blob);
-    }
-  };
+  /* Native camera handler removed
+  const handleNativeCamera = async () => { ... }
+  */
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -226,13 +219,14 @@ export const MediaUpload = ({
           </Button>
         </div>
 
+        {/* Local state isNative is forced false, so button is hidden. Logic kept for structure but effectively removed. */}
         {isNative && type === 'image' && (
           <Button
             size="sm"
             variant="outline"
             className="gap-2"
             disabled={disabled || uploading}
-            onClick={handleNativeCamera}
+            onClick={() => { }} // handleNativeCamera removed
           >
             <CameraIcon className="h-4 w-4" />
             Capture

@@ -187,7 +187,7 @@ const Auth = () => {
         toast.success("Welcome back!");
         navigate("/");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -203,13 +203,19 @@ const Auth = () => {
               confirmation_date: new Date().toISOString(),
               confirmation_agreement: confirmationAgreement,
             },
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: 'https://tipabujayarders.pages.dev/',
           },
         });
 
         if (error) throw error;
-        toast.success("Account created! Please check your email to confirm your account.");
-        setIsLogin(true);
+
+        if (data.session) {
+          toast.success("Account created and signed in successfully!");
+          navigate("/");
+        } else {
+          toast.success("Account created! Please check your email to confirm your account.");
+          setIsLogin(true);
+        }
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Authentication failed";

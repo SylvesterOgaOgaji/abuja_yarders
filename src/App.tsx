@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
+import { toast } from "sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
@@ -7,8 +8,8 @@ import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persist
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
-import { initializeRevenueCat } from "@/services/inAppPurchase";
-import { App as AppPlugin } from "@capacitor/app"; // Import App plugin
+// import AppPlugin and others removed
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UpdatePassword from "./pages/UpdatePassword";
@@ -21,7 +22,7 @@ import Commitments from "./pages/Commitments";
 import Profile from "./pages/Profile";
 import LegalPage from "./pages/LegalPage";
 import NotFound from "./pages/NotFound";
-import { usePushNotifications } from "@/hooks/usePushNotifications"; // Import Push Hook
+// Removed usePushNotifications
 import AdminUserManagement from "@/pages/admin/AdminUserManagement";
 import AdminBanRequests from "@/pages/admin/AdminBanRequests";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
@@ -40,7 +41,6 @@ const persister = createSyncStoragePersister({
 });
 
 const AppRoutes = () => {
-  usePushNotifications(); // Initialize push notifications
   useProfileCompletion(); // Enforce profile completion
 
   return (
@@ -67,18 +67,19 @@ const AppRoutes = () => {
 
 const App = () => {
   useEffect(() => {
-    // Initialize RevenueCat only on native platforms
-    if (Capacitor.isNativePlatform()) {
-      initializeRevenueCat();
-    }
-
-    // Listen for app state changes for background refresh
-    AppPlugin.addListener('appStateChange', ({ isActive }) => {
-      if (isActive) {
-        queryClient.invalidateQueries(); // Refresh data when app comes to foreground
+    // Listen for auth state changes to show welcome toast
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        const hash = window.location.hash;
+        if (hash && (hash.includes('type=signup') || hash.includes('type=invite'))) {
+          toast.success("Successfully verified! Welcome to Abuja Yarders.");
+        }
       }
     });
 
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (

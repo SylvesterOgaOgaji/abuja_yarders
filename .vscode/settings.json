@@ -4,11 +4,24 @@
         "**/android/node_modules/**",
         "**/android/capacitor-cordova-android-plugins/**",
         "**/node_modules/@capacitor/**",
-        "**/node_modules/@revenuecat/**"
+        "**/node_modules/@revenuecat/**",
+        "**/android/.gradle/**",
+        "**/node_modules/**/android/**"
     ],
+    "java.errors.incompleteClasspath.severity": "ignore",
     "deno.enable": true,
     "deno.unstable": true,
     "deno.enablePaths": [
         "supabase/functions"
-    ]
+    ],
+    "files.exclude": {
+        "**/node_modules/@capacitor/**/android": true,
+        "**/node_modules/@revenuecat/**/android": true,
+        "**/node_modules/**/android": true
+    },
+    "files.watcherExclude": {
+        "**/node_modules/@capacitor/**/android": true,
+        "**/node_modules/@revenuecat/**/android": true,
+        "**/node_modules/**/android": true
+    }
 }

@@ -37,8 +37,7 @@ const AdminBanRequests = () => {
 
     const fetchRequests = async () => {
         try {
-            // @ts-ignore
-            const { data, error } = await (supabase as any)
+            const { data, error } = await supabase
                 .from("ban_requests")
                 .select(`
                     *,
@@ -52,8 +51,7 @@ const AdminBanRequests = () => {
 
             console.log("Requests data:", data);
 
-            // @ts-ignore
-            setRequests(data || []);
+            setRequests((data as unknown as BanRequest[]) || []);
         } catch (error: any) {
             console.error("Error fetching requests:", error);
             toast.error("Failed to load ban requests");
@@ -92,7 +90,7 @@ const AdminBanRequests = () => {
             }
 
             // 2. Update Request Status
-            const { error: requestError } = await (supabase as any)
+            const { error: requestError } = await supabase
                 .from("ban_requests")
                 .update({ status: action === 'approve' ? 'approved' : 'rejected' })
                 .eq("id", requestId);
@@ -136,12 +134,10 @@ const AdminBanRequests = () => {
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <CardTitle className="text-lg">
-                                            {/* @ts-ignore */}
-                                            Target: {request.target_user?.full_name || "Unknown User"}
+                                            Target: {(request.target_user as any)?.full_name || "Unknown User"}
                                         </CardTitle>
                                         <CardDescription>
-                                            {/* @ts-ignore */}
-                                            Requested by: {request.requester?.full_name || "Unknown Sub-Admin"}
+                                            Requested by: {(request.requester as any)?.full_name || "Unknown Sub-Admin"}
                                         </CardDescription>
                                     </div>
                                     <Badge variant="outline">{new Date(request.created_at).toLocaleDateString()}</Badge>

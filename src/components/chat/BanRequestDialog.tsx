@@ -35,7 +35,6 @@ export const BanRequestDialog = ({ open, onOpenChange, userId, userName }: BanRe
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error("Not authenticated");
 
-            // @ts-ignore - Table created via SQL, types not updated yet
             const { error } = await supabase.from("ban_requests").insert({
                 target_user_id: userId,
                 requester_id: user.id,
