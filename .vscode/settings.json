@@ -6,7 +6,8 @@
         "**/node_modules/@capacitor/**",
         "**/node_modules/@revenuecat/**",
         "**/android/.gradle/**",
-        "**/node_modules/**/android/**"
+        "**/node_modules/**/android/**",
+        "**/node_modules/**/android/src/**"
     ],
     "java.errors.incompleteClasspath.severity": "ignore",
     "deno.enable": true,
@@ -17,11 +18,15 @@
     "files.exclude": {
         "**/node_modules/@capacitor/**/android": true,
         "**/node_modules/@revenuecat/**/android": true,
-        "**/node_modules/**/android": true
+        "**/node_modules/**/android": true,
+        "**/.gradle": true,
+        "**/android/app/build": true
     },
     "files.watcherExclude": {
         "**/node_modules/@capacitor/**/android": true,
         "**/node_modules/@revenuecat/**/android": true,
         "**/node_modules/**/android": true
-    }
+    },
+    "css.lint.unknownAtRules": "ignore",
+    "scss.lint.unknownAtRules": "ignore"
 }

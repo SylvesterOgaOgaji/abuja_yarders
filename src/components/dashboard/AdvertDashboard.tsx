@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PledgeDialog } from "./PledgeDialog";
 import { useNavigate } from "react-router-dom";
+import { SubmissionsGallery } from "../SubmissionsGallery";
 
 interface DashboardContent {
     [key: string]: string;
@@ -394,6 +395,31 @@ export const AdvertDashboard = () => {
                                 </div>
                             </CardContent>
                         </Card>
+                    </div>
+
+                    {/* Because of You Gallery */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full text-amber-500">
+                                    <Heart className="w-5 h-5 fill-current" />
+                                </div>
+                                <h2 className="text-2xl font-bold">Because of You</h2>
+                            </div>
+                            <Button
+                                variant="link"
+                                className="text-primary hover:text-primary/80 font-semibold"
+                                onClick={() => navigate("/share-story")}
+                            >
+                                Share Your Story
+                            </Button>
+                        </div>
+                        <p className="text-muted-foreground">
+                            Celebrating the impact and testimonies of our amazing community.
+                        </p>
+                        <div className="bg-secondary/10 rounded-3xl p-2 sm:p-4">
+                            <SubmissionsGallery />
+                        </div>
                     </div>
 
                     {/* Meet The Exco Section */}

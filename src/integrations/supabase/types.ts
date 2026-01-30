@@ -224,6 +224,66 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_submissions: {
+        Row: {
+          id: string
+          drive_link: string | null
+          image_url: string | null
+          content: string | null
+          caption: string | null
+          submitter_name: string | null
+          submitter_email: string | null
+          is_approved: boolean | null
+          display_order: number | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          drive_link?: string | null
+          image_url?: string | null
+          content?: string | null
+          caption?: string | null
+          submitter_name?: string | null
+          submitter_email?: string | null
+          is_approved?: boolean | null
+          display_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          drive_link?: string | null
+          image_url?: string | null
+          content?: string | null
+          caption?: string | null
+          submitter_name?: string | null
+          submitter_email?: string | null
+          is_approved?: boolean | null
+          display_order?: number | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      gallery_settings: {
+        Row: {
+          id: number
+          is_visible: boolean | null
+          release_date: string | null
+        }
+        Insert: {
+          id?: number
+          is_visible?: boolean | null
+          release_date?: string | null
+        }
+        Update: {
+          id?: number
+          is_visible?: boolean | null
+          release_date?: string | null
+        }
+        Relationships: []
+      }
       groups: {
         Row: {
           created_at: string
@@ -626,6 +686,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_member_email: {
+        Args: {
+          email_to_check: string
+        }
+        Returns: boolean
+      }
       get_group_name_for_town: { Args: { town_name: string }; Returns: string }
       get_user_media_count_today: {
         Args: { p_media_type: string; p_user_id: string }

@@ -12,6 +12,7 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { GoogleDriveImage } from "../../components/GoogleDriveImage";
 
 interface DashboardContent {
     key: string;
@@ -49,11 +50,30 @@ interface TownGroup {
     created_at: string;
 }
 
+interface GallerySubmission {
+    id: string;
+    drive_link: string;
+    image_url?: string | null;
+    content?: string | null;
+    caption: string | null;
+    submitter_name: string | null;
+    is_approved: boolean;
+    display_order: number;
+    created_at: string;
+}
+
+interface GallerySettings {
+    is_visible: boolean;
+    release_date: string | null;
+}
+
 export default function DashboardCMS() {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("content");
     const [contentItems, setContentItems] = useState<DashboardContent[]>([]);
     const [excoMembers, setExcoMembers] = useState<ExcoMember[]>([]);
+    const [submissions, setSubmissions] = useState<GallerySubmission[]>([]);
+    const [gallerySettings, setGallerySettings] = useState<GallerySettings>({ is_visible: true, release_date: null });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [userRole, setUserRole] = useState<'admin' | 'sub_admin' | null>(null);
@@ -72,6 +92,13 @@ export default function DashboardCMS() {
         category: "other",
         is_active: true
     });
+
+    // Gallery State
+    const [isGalleryDialogOpen, setIsGalleryDialogOpen] = useState(false);
+    const [isBatchImportOpen, setIsBatchImportOpen] = useState(false);
+    const [batchLinks, setBatchLinks] = useState("");
+    const [editingSubmission, setEditingSubmission] = useState<GallerySubmission | null>(null);
+    const [newSubmission, setNewSubmission] = useState<Partial<GallerySubmission>>({ is_approved: true, display_order: 0 });
 
     // Groups State
     const [groups, setGroups] = useState<TownGroup[]>([]);
@@ -122,22 +149,27 @@ export default function DashboardCMS() {
             }
 
             // Fetch All for Admins
-            const [contentRes, excoRes, callsRes, groupsRes] = await Promise.all([
+            const [contentRes, excoRes, callsRes, groupsRes, submissionsRes, settingsRes] = await Promise.all([
                 supabase.from("dashboard_content").select("*").order("key"),
                 supabase.from("exco_members").select("*").order("display_order", { ascending: true }),
                 supabase.from("support_calls").select("*").order("created_at", { ascending: false }),
-                supabase.from("groups").select("*").order("area_council", { ascending: true }).order("name", { ascending: true })
+                supabase.from("groups").select("*").order("area_council", { ascending: true }).order("name", { ascending: true }),
+                supabase.from("gallery_submissions" as any).select("*").order("display_order", { ascending: false }).order("created_at", { ascending: false }),
+                supabase.from("gallery_settings" as any).select("*").eq("id", 1).single()
             ]);
 
             if (contentRes.error) throw contentRes.error;
             if (excoRes.error) throw excoRes.error;
             if (callsRes.error) throw callsRes.error;
             if (groupsRes.error) throw groupsRes.error;
+            if (submissionsRes.error) throw submissionsRes.error;
 
             setContentItems(contentRes.data || []);
             setExcoMembers(excoRes.data || []);
             setActiveCalls(callsRes.data || []);
             setGroups(groupsRes.data as any || []);
+            setSubmissions(submissionsRes.data as any || []);
+            if (settingsRes.data) setGallerySettings(settingsRes.data as any);
         } catch (error) {
             console.error("Error fetching CMS data:", error);
             toast.error("Failed to load CMS data");
@@ -419,6 +451,132 @@ export default function DashboardCMS() {
         } catch (e) { toast.error("Delete failed"); }
     };
 
+
+
+    const deleteSubmission = async (id: string) => {
+        if (!confirm("Delete this submission?")) return;
+        try {
+            const { error } = await supabase.from("gallery_submissions" as any).delete().eq("id", id);
+            if (error) throw error;
+            setSubmissions(prev => prev.filter(s => s.id !== id));
+            toast.success("Submission deleted");
+        } catch (e) { toast.error("Delete failed"); }
+    };
+
+    const saveSubmission = async () => {
+        if (!newSubmission.drive_link) {
+            toast.error("Drive link is required");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const { data, error } = await supabase
+                .from("gallery_submissions" as any)
+                .insert([{
+                    drive_link: newSubmission.drive_link,
+                    caption: newSubmission.caption || "",
+                    submitter_name: newSubmission.submitter_name || "Anonymous",
+                    is_approved: newSubmission.is_approved ?? true
+                }])
+                .select();
+
+            if (error) throw error;
+
+            if (data) {
+                setSubmissions([data[0] as any, ...submissions]);
+                setIsGalleryDialogOpen(false);
+                setNewSubmission({ is_approved: true });
+                toast.success("Submission added");
+            }
+        } catch (e) {
+            toast.error("Save failed");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleBatchImport = async () => {
+        const links = batchLinks.split(/[\n,]+/).map(l => l.trim()).filter(l => l.length > 0);
+        if (links.length === 0) {
+            toast.error("No links found");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const imports = links.map(link => ({
+                drive_link: link,
+                caption: "",
+                submitter_name: "Batch Import",
+                is_approved: true
+            }));
+
+            const { data, error } = await supabase
+                .from("gallery_submissions" as any)
+                .insert(imports)
+                .select();
+
+            if (error) throw error;
+
+            if (data) {
+                setSubmissions([...(data as any[]), ...submissions]);
+                setIsBatchImportOpen(false);
+                setBatchLinks("");
+                toast.success(`Successfully imported ${data.length} submissions`);
+            }
+        } catch (e) {
+            toast.error("Batch import failed");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const updateGallerySettings = async (updates: Partial<GallerySettings>) => {
+        try {
+            const newSettings = { ...gallerySettings, ...updates };
+            const { error } = await supabase
+                .from("gallery_settings" as any)
+                .update(updates)
+                .eq("id", 1);
+
+            if (error) throw error;
+            setGallerySettings(newSettings);
+            toast.success("Gallery settings updated");
+        } catch (e) {
+            toast.error("Failed to update settings");
+        }
+    };
+
+    const toggleSubmissionApproval = async (submission: GallerySubmission) => {
+        try {
+            const { error } = await supabase
+                .from("gallery_submissions" as any)
+                .update({ is_approved: !submission.is_approved })
+                .eq("id", submission.id);
+
+            if (error) throw error;
+            setSubmissions(submissions.map(s => s.id === submission.id ? { ...s, is_approved: !s.is_approved } : s));
+            toast.success(submission.is_approved ? "Submission unapproved" : "Submission approved");
+        } catch (e) { toast.error("Update failed"); }
+    };
+
+    const updateSubmission = async (id: string, updates: Partial<GallerySubmission>) => {
+        setSaving(true);
+        try {
+            const { error } = await supabase
+                .from("gallery_submissions" as any)
+                .update(updates)
+                .eq("id", id);
+            if (error) throw error;
+            setSubmissions(submissions.map(s => s.id === id ? { ...s, ...updates } : s));
+            toast.success("Submission updated");
+            setEditingSubmission(null);
+            setIsGalleryDialogOpen(false);
+        } catch (e) { toast.error("Update failed"); }
+        finally { setSaving(false); }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -448,6 +606,7 @@ export default function DashboardCMS() {
                                 {userRole === 'admin' && <option value="content">Content & Text</option>}
                                 {userRole === 'admin' && <option value="exco">Exco Members</option>}
                                 <option value="calls">Active Calls</option>
+                                {userRole === 'admin' && <option value="gallery">Because of You Gallery</option>}
                                 {userRole === 'admin' && <option value="groups">Towns / Groups</option>}
                                 {userRole === 'admin' && <option value="legal">Legal & Policies</option>}
                             </select>
@@ -461,18 +620,19 @@ export default function DashboardCMS() {
                     </div>
 
                     {/* Desktop Navigation (Tabs) */}
-                    <TabsList className="hidden md:grid w-full grid-cols-5 h-auto py-2">
+                    <TabsList className="hidden md:grid w-full grid-cols-6 h-auto py-2">
                         {userRole === 'admin' && (
                             <>
-                                <TabsTrigger value="content" className="py-2">Content & Text</TabsTrigger>
-                                <TabsTrigger value="exco" className="py-2">Exco Members</TabsTrigger>
+                                <TabsTrigger value="content" className="py-2 text-xs lg:text-sm">Content</TabsTrigger>
+                                <TabsTrigger value="exco" className="py-2 text-xs lg:text-sm">Exco</TabsTrigger>
                             </>
                         )}
-                        <TabsTrigger value="calls" className="py-2">Active Calls</TabsTrigger>
+                        <TabsTrigger value="calls" className="py-2 text-xs lg:text-sm">Calls</TabsTrigger>
                         {userRole === 'admin' && (
                             <>
-                                <TabsTrigger value="groups" className="py-2">Towns / Groups</TabsTrigger>
-                                <TabsTrigger value="legal" className="py-2">Legal & Policies</TabsTrigger>
+                                <TabsTrigger value="gallery" className="py-2 text-xs lg:text-sm">Gallery</TabsTrigger>
+                                <TabsTrigger value="groups" className="py-2 text-xs lg:text-sm">Groups</TabsTrigger>
+                                <TabsTrigger value="legal" className="py-2 text-xs lg:text-sm">Legal</TabsTrigger>
                             </>
                         )}
                     </TabsList>
@@ -650,6 +810,108 @@ export default function DashboardCMS() {
                             ))}
                         </div>
                     </TabsContent>
+
+                    {userRole === 'admin' && (
+                        <TabsContent value="gallery" className="space-y-4 mt-4">
+                            <div className="bg-card border rounded-xl p-4 mb-6 space-y-4">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    <Save className="h-5 w-5 text-primary" /> Gallery Controls
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                                    <div className="flex items-center space-x-3 bg-muted/50 p-2 rounded-lg border">
+                                        <input
+                                            type="checkbox"
+                                            id="gallery-visible"
+                                            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                            checked={gallerySettings.is_visible}
+                                            onChange={(e) => updateGallerySettings({ is_visible: e.target.checked })}
+                                        />
+                                        <Label htmlFor="gallery-visible" className="flex-1 cursor-pointer font-semibold">
+                                            {gallerySettings.is_visible ? "Gallery is LIVE" : "Gallery is PAUSED"}
+                                        </Label>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="release-date">Scheduled Release Date</Label>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                id="release-date"
+                                                type="datetime-local"
+                                                className="text-sm"
+                                                value={gallerySettings.release_date ? gallerySettings.release_date.slice(0, 16) : ""}
+                                                onChange={(e) => updateGallerySettings({ release_date: e.target.value || null })}
+                                            />
+                                            {gallerySettings.release_date && (
+                                                <Button variant="outline" size="icon" onClick={() => updateGallerySettings({ release_date: null })}>
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-2 justify-end md:col-span-2 lg:col-span-1">
+                                        <Button variant="outline" onClick={() => setIsBatchImportOpen(true)}>
+                                            <Upload className="h-4 w-4 mr-2" /> Batch Import
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-semibold">Individual Submissions ({submissions.length})</h2>
+                                <Button onClick={() => setIsGalleryDialogOpen(true)}>
+                                    <Plus className="h-4 w-4 mr-2" /> Add One
+                                </Button>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {submissions
+                                    .sort((a, b) => (b.display_order || 0) - (a.display_order || 0) || new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                    .map((sub) => (
+                                        <Card key={sub.id} className={`relative overflow-hidden ${!sub.is_approved ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                                            <div className="aspect-video bg-muted relative group">
+                                                {sub.image_url ? (
+                                                    <img src={sub.image_url} className="w-full h-full object-cover" />
+                                                ) : sub.drive_link ? (
+                                                    <GoogleDriveImage
+                                                        link={sub.drive_link}
+                                                        className="w-full h-full"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center p-4 bg-muted text-center italic text-xs text-muted-foreground">
+                                                        "{sub.content || 'No content'}"
+                                                    </div>
+                                                )}
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <Button size="icon" variant="secondary" className="rounded-full h-8 w-8" onClick={() => window.open(sub.image_url || sub.drive_link || '#', '_blank')}>
+                                                        <ExternalLink className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <CardContent className="p-3">
+                                                <p className="text-sm font-medium line-clamp-1">{sub.caption || "No caption"}</p>
+                                                <div className="flex justify-between items-center mt-1">
+                                                    <p className="text-xs text-muted-foreground">By {sub.submitter_name || "Anonymous"}</p>
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-[10px] font-mono bg-primary/10 text-primary px-1 rounded">Rank: {sub.display_order || 0}</span>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                            <div className="absolute top-2 right-2 flex gap-1">
+                                                <Button size="icon" variant={sub.is_approved ? "secondary" : "destructive"} className="h-8 w-8" onClick={() => toggleSubmissionApproval(sub)}>
+                                                    {sub.is_approved ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                                                </Button>
+                                                <Button size="icon" variant="secondary" className="h-8 w-8" onClick={() => { setEditingSubmission(sub); setNewSubmission(sub); setIsGalleryDialogOpen(true); }}>
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => deleteSubmission(sub.id)}>
+                                                    <Trash className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </Card>
+                                    ))}
+                            </div>
+                        </TabsContent>
+                    )}
 
                     {userRole === 'admin' && (
                         <TabsContent value="groups" className="space-y-4 mt-4">
@@ -879,6 +1141,108 @@ export default function DashboardCMS() {
                         <Button onClick={saveCall} disabled={saving}>
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isGalleryDialogOpen} onOpenChange={(open) => { setIsGalleryDialogOpen(open); if (!open) { setEditingSubmission(null); setNewSubmission({ is_approved: true }); } }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingSubmission ? "Edit Submission" : "Add Gallery Submission"}</DialogTitle>
+                        <DialogDescription>
+                            {editingSubmission ? "Modify the gallery submission details." : "Enter the Google Drive link and details for the submission."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        {!editingSubmission && (
+                            <div className="flex flex-col gap-2">
+                                <Label htmlFor="gallery-link">Google Drive Share Link</Label>
+                                <Input
+                                    id="gallery-link"
+                                    placeholder="https://drive.google.com/file/d/..."
+                                    value={newSubmission.drive_link || ''}
+                                    onChange={(e) => setNewSubmission({ ...newSubmission, drive_link: e.target.value })}
+                                />
+                            </div>
+                        )}
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="gallery-caption">Caption / Testimony</Label>
+                            <Textarea
+                                id="gallery-caption"
+                                placeholder="Enter caption..."
+                                value={newSubmission.caption || ''}
+                                onChange={(e) => setNewSubmission({ ...newSubmission, caption: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="gallery-name">Submitter Name</Label>
+                            <Input
+                                id="gallery-name"
+                                placeholder="Anonymous"
+                                value={newSubmission.submitter_name || ''}
+                                onChange={(e) => setNewSubmission({ ...newSubmission, submitter_name: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="gallery-order">Display Priority (Higher = Top)</Label>
+                            <Input
+                                id="gallery-order"
+                                type="number"
+                                placeholder="0"
+                                value={newSubmission.display_order ?? 0}
+                                onChange={(e) => setNewSubmission({ ...newSubmission, display_order: parseInt(e.target.value) })}
+                            />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <input
+                                id="gallery-approved"
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                checked={newSubmission.is_approved ?? true}
+                                onChange={(e) => setNewSubmission({ ...newSubmission, is_approved: e.target.checked })}
+                            />
+                            <Label htmlFor="gallery-approved">Approved for display?</Label>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsGalleryDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={() => editingSubmission ? updateSubmission(editingSubmission.id, newSubmission) : saveSubmission()} disabled={saving}>
+                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {editingSubmission ? "Save Changes" : "Save Submission"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isBatchImportOpen} onOpenChange={setIsBatchImportOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Batch Import Submissions</DialogTitle>
+                        <DialogDescription>
+                            Paste multiple Google Drive links below (one per line or separated by commas).
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="flex flex-col gap-2">
+                            <Label htmlFor="batch-links">Submission Links</Label>
+                            <Textarea
+                                id="batch-links"
+                                placeholder="https://drive.google.com/...\nhttps://drive.google.com/..."
+                                className="min-h-[250px] font-mono text-xs"
+                                value={batchLinks}
+                                onChange={(e) => setBatchLinks(e.target.value)}
+                            />
+                            <p className="text-[10px] text-muted-foreground italic text-right">
+                                {batchLinks.split(/[\n,]+/).filter(l => l.trim()).length} links detected
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsBatchImportOpen(false)}>Cancel</Button>
+                        <Button onClick={handleBatchImport} disabled={saving || !batchLinks.trim()}>
+                            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Import All Links
                         </Button>
                     </DialogFooter>
                 </DialogContent>

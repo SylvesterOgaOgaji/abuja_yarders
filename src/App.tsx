@@ -27,6 +27,7 @@ import AdminUserManagement from "@/pages/admin/AdminUserManagement";
 import AdminBanRequests from "@/pages/admin/AdminBanRequests";
 import { useProfileCompletion } from "@/hooks/useProfileCompletion";
 import ReactivateAccount from "./pages/auth/ReactivateAccount";
+import ShareStory from "./pages/ShareStory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +60,7 @@ const AppRoutes = () => {
       <Route path="/commitments" element={<Commitments />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/legal/:type" element={<LegalPage />} />
+      <Route path="/share-story" element={<ShareStory />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
